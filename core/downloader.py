@@ -13,10 +13,15 @@ def download_file(url: str, target_path: str):
     """
     Downloads Google Image using aria2c multi-connection acceleration or urllib fallback.
     """
-    print(f"[*] Downloading official Google image from:\n    {url}")
     target_dir = os.path.dirname(os.path.abspath(target_path)) or "."
     target_name = os.path.basename(target_path)
     os.makedirs(target_dir, exist_ok=True)
+
+    if os.path.exists(target_path) and os.path.getsize(target_path) > 100 * 1024 * 1024:
+        print(f"    [✓] Using cached Google image: {target_path} ({os.path.getsize(target_path)/1024/1024:.1f} MB)")
+        return
+
+    print(f"[*] Downloading official Google image from:\n    {url}")
 
     # 1. Try turbo multi-connection download via aria2c
     if shutil.which("aria2c"):
@@ -64,4 +69,3 @@ def download_file(url: str, target_path: str):
                 print(f"\r    -> {mb_down:.1f} MB / {mb_total:.1f} MB ({percent:.1f}%)", end="", flush=True)
         print()
     print(f"[✓] Download complete: {target_path} ({os.path.getsize(target_path)/1024/1024:.1f} MB)")
-

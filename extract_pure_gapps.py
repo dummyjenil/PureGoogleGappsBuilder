@@ -2,8 +2,7 @@
 """
 Pure Google GApps Extractor & Universal Flashable Package Generator
 Extracts 100% genuine Google Apps directly from Google's official Android SDK Emulator images.
-Generates TWRP / Recovery Flashable ZIPs with OTA/addon.d survival support and correct ABI mappings.
-Universal support for EROFS (Android 15), EXT4 (Android 9-14), Sparse Images, & Dynamic Super Partitions.
+Generates MindTheGapps-standard Recovery Flashable ZIPs for Android 9.0.0 to 15.0.0.
 """
 
 import os
@@ -20,11 +19,16 @@ def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_di
     Builds a flashable GApps package from official Google SDK image.
     """
     print(f"\n{'='*75}")
-    print(f"🚀 BUILDING PURE GAPPS: GoogleGapps-{android_version}-{arch}.zip")
+    print(f"🚀 BUILDING MINDTHEGAPPS-COMPATIBLE GAPPS: GoogleGapps-{android_version}-{arch}.zip")
     print(f"{'='*75}")
     
-    # Use /tmp on host/runner for large disk space
-    work_dir = f"/tmp/pure_gapps_{android_version}_{arch}"
+    out_dir_abs = os.path.abspath(out_dir)
+    os.makedirs(out_dir_abs, exist_ok=True)
+    final_zip_name = f"GoogleGapps-{android_version}-{arch}.zip"
+    final_zip_path = os.path.join(out_dir_abs, final_zip_name)
+
+    # Use user home directory tmp for ample disk space (50GB+)
+    work_dir = os.path.join(os.path.expanduser("~"), f".gapps_build_tmp_{android_version}_{arch}")
     if os.path.exists(work_dir):
         shutil.rmtree(work_dir, ignore_errors=True)
     os.makedirs(work_dir, exist_ok=True)
@@ -42,31 +46,27 @@ def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_di
         print(f"[*] Step 2: Extracting system and product partitions from container...")
         extract_partition_from_container(downloaded_zip, work_dir, extracted_raw_dir)
 
-        # Step 3: Structure GApps Filesystem, extract native libs, and add installer
-        print(f"[*] Step 3: Structuring genuine GApps and generating installer scripts...")
-        included_apks = structure_gapps_hierarchy(extracted_raw_dir, gapps_pkg_dir, android_version, arch)
+        # Step 3: Structure GApps Filesystem, overlays, toybox, and installer scripts
+        print(f"[*] Step 3: Structuring MindTheGapps hierarchy and generating installer scripts...")
+        included_files = structure_gapps_hierarchy(extracted_raw_dir, gapps_pkg_dir, android_version, arch)
 
         # Step 4: Verification Gate
-        apk_count = len(included_apks)
-        print(f"[*] Step 4: Verification - Successfully collected {apk_count} genuine Google APKs.")
-        if apk_count == 0:
-            raise RuntimeError(f"CRITICAL ERROR: 0 APKs collected for Android {android_version} ({arch})!")
+        file_count = len(included_files)
+        print(f"[*] Step 4: Verification - Successfully collected {file_count} genuine Google files/components.")
+        if file_count == 0:
+            raise RuntimeError(f"CRITICAL ERROR: 0 components collected for Android {android_version} ({arch})!")
 
-        # Step 5: Final Package Creation with Ultra Deflate
-        os.makedirs(out_dir, exist_ok=True)
-        final_zip_name = f"GoogleGapps-{android_version}-{arch}.zip"
-        final_zip_path = os.path.join(out_dir, final_zip_name)
-        
+        # Step 5: Final Package Creation and TestKey Signing
         print(f"[*] Step 5: Creating final Flashable GApps package: {final_zip_name}...")
         create_flashable_zip(gapps_pkg_dir, final_zip_path)
         
         package_size_mb = os.path.getsize(final_zip_path) / (1024 * 1024)
         print(f"\n{'='*75}")
-        print(f"🎉 SUCCESS! Genuine Flashable GApps Package Created:")
+        print(f"🎉 SUCCESS! Flashable GApps Package Created:")
         print(f"   File Name : {final_zip_name}")
-        print(f"   Full Path : {os.path.abspath(final_zip_path)}")
+        print(f"   Full Path : {final_zip_path}")
         print(f"   File Size : {package_size_mb:.2f} MB")
-        print(f"   Total APKs: {apk_count} genuine Google Apps")
+        print(f"   Total Components: {file_count} items")
         print(f"{'='*75}\n")
         
         if package_size_mb < 5.0:
@@ -80,7 +80,7 @@ def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_di
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract 100% Pure GApps from Google Official Images")
+    parser = argparse.ArgumentParser(description="Extract 100% Pure GApps from Google Official Images (MindTheGapps Compatible)")
     parser.add_argument("--android", required=True, help="Android Version (e.g. 13.0.0)")
     parser.add_argument("--arch", required=True, help="Architecture (e.g. x86_64, arm64)")
     parser.add_argument("--abi", default="x86_64", help="Target ABI (e.g. x86_64, arm64-v8a)")
