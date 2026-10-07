@@ -1,0 +1,167 @@
+name: Pure Google Official GApps Monthly Sync & Release
+
+on:
+  schedule:
+    # Runs monthly (on the 1st day of every month at 00:00 UTC)
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Force build all versions even if no new update detected on Google servers"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  PYTHONUNBUFFERED: "1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =========================================================================
+  # 1. Check for updates directly from Google's official XML feed
+  # =========================================================================
+  check-for-updates:
+    name: Check Google Official Updates
+    runs-on: ubuntu-24.04
+    outputs:
+      has_updates: ${{ steps.check.outputs.has_updates }}
+      matrix: ${{ steps.check.outputs.matrix }}
+      update_count: ${{ steps.check.outputs.update_count }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Fetch previous state from GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "[*] Checking for previous release state asset..."
+          gh release download release --pattern "latest_revisions.json" --output latest_revisions.json || true
+          if [ -f "latest_revisions.json" ]; then
+            echo "[✓] Found existing release state JSON."
+          else
+            echo "[*] No previous release state found. Performing fresh scan."
+          fi
+
+      - name: Query dl.google.com for latest official updates
+        id: check
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force_build }}" == "true" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            FORCE_FLAG="--force"
+          fi
+
+          python3 check_updates.py \
+            --state-file latest_revisions.json \
+            --output-json new_state.json $FORCE_FLAG
+
+      - name: Upload State Artifact
+        if: steps.check.outputs.has_updates == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-revisions-state
+          path: new_state.json
+          compression-level: 0
+          retention-days: 1
+
+  # =========================================================================
+  # 2. Extract & Build in Parallel from Google Official Images
+  # =========================================================================
+  build-gapps:
+    name: Build Android ${{ matrix.androidv }} (${{ matrix.arch }})
+    needs: check-for-updates
+    if: needs.check-for-updates.outputs.has_updates == 'true'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.check-for-updates.outputs.matrix) }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install High-Speed Extraction Utilities (aria2, 7z, erofs, simg2img)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            aria2 \
+            p7zip-full \
+            unzip \
+            android-sdk-libsparse-utils \
+            erofs-utils \
+            e2fsprogs
+
+      - name: Extract & Package Pure Google GApps
+        run: |
+          python3 extract_pure_gapps.py \
+            --android "${{ matrix.androidv }}" \
+            --arch "${{ matrix.arch }}" \
+            --abi "${{ matrix.abi }}" \
+            --url "${{ matrix.url }}" \
+            --out-dir "out_packages"
+
+      - name: Upload Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoogleGapps-${{ matrix.androidv }}-${{ matrix.arch }}
+          path: out_packages/*.zip
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+  # =========================================================================
+  # 3. Publish to Single Persistent GitHub Release (Replace Files)
+  # =========================================================================
+  publish-release:
+    name: Publish Release (Replace Files)
+    needs: [check-for-updates, build-gapps]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Built Packages
+        uses: actions/download-artifact@v4
+        with:
+          path: release_packages
+          merge-multiple: true
+
+      - name: Download State Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: google-revisions-state
+          path: .
+        continue-on-error: true
+
+      - name: Prepare Assets
+        run: |
+          if [ -f "new_state.json" ]; then
+            cp new_state.json release_packages/latest_revisions.json
+          fi
+          ls -lh release_packages/
+
+      - name: Upload & Replace Assets in Single Permanent Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="release"
+          
+          # Check if release already exists
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "[*] Release '$RELEASE_TAG' exists. Overwriting/replacing files..."
+            gh release upload "$RELEASE_TAG" release_packages/* --clobber
+          else
+            echo "[*] Creating single permanent release '$RELEASE_TAG'..."
+            gh release create "$RELEASE_TAG" release_packages/* \
+              --title "Pure Google GApps" \
+              --notes "" \
+              --latest
+          fi
+          echo "[✓] Files uploaded successfully to '$RELEASE_TAG' release."

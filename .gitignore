@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# State & local build files
+latest_revisions.json
+new_state.json
+out_packages/
+release_packages/
+out/
+*.zip
+*.img
+*.sha256sum
+/tmp/
+
+# OS specific
+.DS_Store
+Thumbs.db
