@@ -19,6 +19,7 @@ from .constants import (
     ARCH_TO_TOYBOX,
     ADDOND_HEAD,
     ADDOND_TAIL,
+    KNOWN_PRIVILEGED_PERMISSIONS,
 )
 
 GITLAB_RAW_BASE = "https://gitlab.com/MindTheGapps/vendor_gapps/-/raw"
@@ -264,16 +265,57 @@ def fetch_common_proprietary_files(branch: str, arch: str, system_dir: str):
             print(f"    [!] Warning: Failed to query static proprietary tree '{prefix}': {e}")
 
 
-def sync_privapp_permissions(system_dir: str):
+def _extract_privileged_perms_from_apk(aapt_bin: str, apk_or_jar_path: str) -> set:
+    """Extracts any <permission> defined with PROTECTION_FLAG_PRIVILEGED (0x10) from AndroidManifest.xml"""
+    found = set()
+    if not apk_or_jar_path or not os.path.isfile(apk_or_jar_path):
+        return found
+    try:
+        out = subprocess.check_output(
+            [aapt_bin, "dump", "xmltree", apk_or_jar_path, "AndroidManifest.xml"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
+        cur_perm = None
+        for line in out.splitlines():
+            s = line.strip()
+            if s.startswith("E: permission "):
+                cur_perm = None
+            elif cur_perm is None and "A: android:name(" in s and '"' in s:
+                cur_perm = s.split('"')[1]
+            elif cur_perm and "A: android:protectionLevel(" in s and ")0x" in s:
+                val = int(s.split(")0x")[1], 16)
+                if val & 0x10:
+                    found.add(cur_perm)
+                cur_perm = None
+    except Exception:
+        pass
+    return found
+
+
+def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
     """
     Scans every APK placed in priv-app/ across partitions (product, system_ext, system)
-    using aapt and guarantees all requested permissions are whitelisted in that partition's
-    etc/permissions/privapp-permissions-google*.xml so PackageManagerService never crashes.
+    using aapt and guarantees all requested signature|privileged permissions are whitelisted
+    in that partition's etc/permissions/privapp-permissions-google*.xml (skipping normal
+    non-privileged permissions like INTERNET/WAKE_LOCK so XML size matches MindTheGapps).
     """
     import xml.etree.ElementTree as ET
     aapt_bin = find_aapt_binary()
     if not aapt_bin:
         return
+
+    privileged_allowlist = set(KNOWN_PRIVILEGED_PERMISSIONS)
+    android_jar = find_android_jar(sdk_version)
+    if android_jar:
+        privileged_allowlist |= _extract_privileged_perms_from_apk(aapt_bin, android_jar)
+
+    # Also include any custom privileged permissions declared by APKs in system_dir
+    for r, _, files in os.walk(system_dir):
+        for f in files:
+            if f.endswith(".apk"):
+                privileged_allowlist |= _extract_privileged_perms_from_apk(aapt_bin, os.path.join(r, f))
 
     partitions = [
         ("product", os.path.join(system_dir, "product"), "privapp-permissions-google-product.xml"),
@@ -338,7 +380,7 @@ def sync_privapp_permissions(system_dir: str):
                     for l in lines[1:]:
                         if "uses-permission:" in l and "name='" in l:
                             perm = l.split("name='")[1].split("'")[0]
-                            if perm not in req:
+                            if perm in privileged_allowlist and perm not in req:
                                 req.append(perm)
                     node = pkg_nodes.get(pkg)
                     if node is None:
@@ -359,7 +401,8 @@ def sync_privapp_permissions(system_dir: str):
             except Exception:
                 pass
             tree.write(target_xml, encoding="utf-8", xml_declaration=True)
-            print(f"    [✓] Auto-synchronized privapp-permissions for '{part_name}' -> {os.path.basename(target_xml)}")
+            print(f"    [✓] Auto-synchronized privileged permissions for '{part_name}' -> {os.path.basename(target_xml)}")
+
 
 
 def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_version: str, arch: str):
@@ -447,7 +490,7 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     fetch_common_proprietary_files(branch, arch, system_dir)
 
     # 4. Auto-synchronize privapp-permissions for all extracted APKs to prevent bootloops
-    sync_privapp_permissions(system_dir)
+    sync_privapp_permissions(system_dir, sdk_version)
 
     # 5. Compile / fetch RRO overlays
     overlay_dir = os.path.join(system_dir, "product", "overlay")
