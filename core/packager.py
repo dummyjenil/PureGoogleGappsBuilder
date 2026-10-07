@@ -17,7 +17,6 @@ from .constants import (
     ADDOND_TAIL,
     KNOWN_PRIVILEGED_PERMISSIONS,
 )
-from analyzer.apk_analyzer import parse_axml_version
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_ROOT = os.path.join(REPO_ROOT, "static")
@@ -374,6 +373,7 @@ def _index_extracted_apks_by_package(extracted_dir: str) -> dict:
     Google Official SDK image to map `package_name -> [apk_paths]`.
     Enables package-name fallback lookup when Google renames APKs across SDK releases.
     """
+    from analyzer.apk_analyzer import parse_axml_version
     pkg_to_apks = {}
     print("[*] Indexing all APKs inside unpacked Google SDK image by package name (AXML header scan)...")
     for root, _, files in os.walk(extracted_dir):

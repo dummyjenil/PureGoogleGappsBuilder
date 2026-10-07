@@ -4,8 +4,8 @@ Centralized modular architecture for building genuine Google GApps flashable pac
 """
 
 from .constants import (
-    BRANCH_MAP,
     SDK_MAP,
+    APK_PACKAGE_MAP,
     ARCH_TO_TOYBOX,
     ABI_TO_LIB_DIR,
     TARGET_APP_PATTERNS,
@@ -26,8 +26,8 @@ from .packager import (
 )
 
 __all__ = [
-    "BRANCH_MAP",
     "SDK_MAP",
+    "APK_PACKAGE_MAP",
     "ARCH_TO_TOYBOX",
     "ABI_TO_LIB_DIR",
     "TARGET_APP_PATTERNS",
