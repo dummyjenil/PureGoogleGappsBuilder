@@ -82,27 +82,26 @@ def fetch_target_file_list_for_branch(branch: str, arch: str) -> dict:
 
 
 def find_android_jar(sdk_version: int):
-    """Locates android.jar fast without expensive directory globbing"""
-    android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or "/usr/local/lib/android/sdk"
-    user_sdk = os.path.expanduser("~/Android/Sdk")
-    
-    candidates = [
-        f"{android_home}/platforms/android-{sdk_version}/android.jar",
-        f"{android_home}/platforms/android-35/android.jar",
-        f"{android_home}/platforms/android-34/android.jar",
-        f"{android_home}/platforms/android-33/android.jar",
-        f"{user_sdk}/platforms/android-{sdk_version}/android.jar",
-        f"{user_sdk}/platforms/android-35/android.jar",
-        f"{user_sdk}/platforms/android-34/android.jar",
-        f"/usr/local/lib/android/sdk/platforms/android-{sdk_version}/android.jar",
-        f"/usr/local/lib/android/sdk/platforms/android-35/android.jar",
-        f"/usr/local/lib/android/sdk/platforms/android-34/android.jar",
-        f"/usr/lib/android-sdk/platforms/android-{sdk_version}/android.jar",
-        f"/usr/lib/android-sdk/platforms/android-34/android.jar"
+    """Locates android.jar fast by inspecting SDK platforms directories without recursive globbing"""
+    sdk_roots = [
+        os.environ.get("ANDROID_HOME"),
+        os.environ.get("ANDROID_SDK_ROOT"),
+        "/usr/local/lib/android/sdk",
+        "/usr/lib/android-sdk",
+        os.path.expanduser("~/Android/Sdk"),
     ]
-    for c in candidates:
-        if os.path.isfile(c):
-            return c
+    for root in sdk_roots:
+        if not root:
+            continue
+        exact = os.path.join(root, "platforms", f"android-{sdk_version}", "android.jar")
+        if os.path.isfile(exact):
+            return exact
+        plat_dir = os.path.join(root, "platforms")
+        if os.path.isdir(plat_dir):
+            for entry in sorted(os.listdir(plat_dir), reverse=True):
+                cand = os.path.join(plat_dir, entry, "android.jar")
+                if os.path.isfile(cand):
+                    return cand
     return None
 
 
@@ -123,7 +122,7 @@ def find_aapt_binary():
 
 def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir: str):
     """
-    Compiles Runtime Resource Overlays (RROs) for Android 12+ using aapt
+    Compiles Runtime Resource Overlays (RROs) for Android 12+ using aapt (-0 arsc) and signs them with apksigner
     """
     if sdk_version < 31:
         return  # Overlays are only present in Android 12 (API 31)+
@@ -140,82 +139,211 @@ def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir:
     except Exception:
         # Fallback standard overlays for Android 12+
         overlays_to_build = ["GmsOverlay", "GmsSettingsProviderOverlay"]
-        if sdk_version >= 33:
+        if sdk_version >= 34:
             overlays_to_build.extend(["GmsSettingsOverlay", "GmsSetupWizardOverlay"])
 
     android_jar = find_android_jar(sdk_version)
     aapt_bin = find_aapt_binary()
+    apksigner_bin = shutil.which("apksigner")
 
     if not aapt_bin or not android_jar:
         print(f"    [!] Warning: aapt ({aapt_bin}) or android.jar ({android_jar}) not found. Skipping overlay compilation.")
         return
 
-    for overlay_name in overlays_to_build:
-        out_apk = os.path.join(target_overlay_dir, f"{overlay_name}.apk")
-        if os.path.exists(out_apk):
-            continue
-
-        base_overlay_url = f"{GITLAB_RAW_BASE}/{branch}/overlay/{overlay_name}"
-        try:
-            with tempfile.TemporaryDirectory() as td:
-                manifest_data = fetch_url_bytes(f"{base_overlay_url}/AndroidManifest.xml", timeout=10)
-                manifest_file = os.path.join(td, "AndroidManifest.xml")
-                with open(manifest_file, "wb") as f:
-                    f.write(manifest_data)
-
-                res_val_dir = os.path.join(td, "res", "values")
-                os.makedirs(res_val_dir, exist_ok=True)
-
-                # List value XMLs
-                vals_tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay/{overlay_name}/res/values"
-                vdata = json.loads(fetch_url_bytes(vals_tree_url, timeout=10).decode("utf-8"))
-                for vitem in vdata:
-                    vname = vitem["name"]
-                    vbytes = fetch_url_bytes(f"{base_overlay_url}/res/values/{vname}", timeout=10)
-                    with open(os.path.join(res_val_dir, vname), "wb") as vf:
-                        vf.write(vbytes)
-
-                cmd = [aapt_bin, "package", "-M", manifest_file, "-S", os.path.join(td, "res"), "-I", android_jar, "-F", out_apk]
-                subprocess.run(cmd, check=True, capture_output=True, timeout=15)
-                print(f"    [✓] Compiled Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
-        except Exception as e:
-            print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
-
-
-def fetch_common_proprietary_files(branch: str, system_dir: str):
-    """
-    Downloads static proprietary permission XMLs, default permissions, and sysconfigs
-    from MindTheGapps common/proprietary to ensure 100% complete GApps installation suite.
-    """
-    print(f"[*] Ensuring MindTheGapps static proprietary configs for branch '{branch}'...")
-    tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=common/proprietary&recursive=true&per_page=100"
-    try:
-        data = json.loads(fetch_url_bytes(tree_url, timeout=12).decode("utf-8"))
-        for item in data:
-            if item.get("type") != "blob":
-                continue
-            rel_path = item["path"]
-            if not rel_path.startswith("common/proprietary/"):
-                continue
-            
-            sub_rel = rel_path[len("common/proprietary/"):]
-            dst_path = os.path.join(system_dir, sub_rel)
-            
-            # Don't overwrite genuine extracted APKs, but always ensure XMLs/certs/configs/framework jars are present
-            if os.path.exists(dst_path) and dst_path.endswith(".apk"):
-                continue
-            
-            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            file_url = f"{GITLAB_RAW_BASE}/{branch}/{rel_path}"
+    with tempfile.TemporaryDirectory() as key_td:
+        pk8_file = os.path.join(key_td, "testkey.pk8")
+        pem_file = os.path.join(key_td, "testkey.x509.pem")
+        can_sign = False
+        if apksigner_bin:
             try:
-                content = fetch_url_bytes(file_url, timeout=10)
-                with open(dst_path, "wb") as f:
-                    f.write(content)
-                print(f"    [+] Static Proprietary: {sub_rel} ({len(content)} bytes)")
+                with open(pk8_file, "wb") as f:
+                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/tau/build/sign/testkey.pk8", timeout=10))
+                with open(pem_file, "wb") as f:
+                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/tau/build/sign/testkey.x509.pem", timeout=10))
+                can_sign = True
             except Exception:
                 pass
-    except Exception as e:
-        print(f"    [!] Warning: Failed to query static proprietary tree: {e}")
+
+        for overlay_name in overlays_to_build:
+            out_apk = os.path.join(target_overlay_dir, f"{overlay_name}.apk")
+            if os.path.exists(out_apk):
+                continue
+
+            base_overlay_url = f"{GITLAB_RAW_BASE}/{branch}/overlay/{overlay_name}"
+            try:
+                with tempfile.TemporaryDirectory() as td:
+                    manifest_data = fetch_url_bytes(f"{base_overlay_url}/AndroidManifest.xml", timeout=10)
+                    manifest_file = os.path.join(td, "AndroidManifest.xml")
+                    with open(manifest_file, "wb") as f:
+                        f.write(manifest_data)
+
+                    res_val_dir = os.path.join(td, "res", "values")
+                    os.makedirs(res_val_dir, exist_ok=True)
+
+                    # List value XMLs
+                    vals_tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay/{overlay_name}/res/values"
+                    vdata = json.loads(fetch_url_bytes(vals_tree_url, timeout=10).decode("utf-8"))
+                    for vitem in vdata:
+                        vname = vitem["name"]
+                        vbytes = fetch_url_bytes(f"{base_overlay_url}/res/values/{vname}", timeout=10)
+                        with open(os.path.join(res_val_dir, vname), "wb") as vf:
+                            vf.write(vbytes)
+
+                    cmd = [
+                        aapt_bin, "package", "-f",
+                        "-M", manifest_file,
+                        "-S", os.path.join(td, "res"),
+                        "-I", android_jar,
+                        "-0", "arsc",
+                        "-F", out_apk,
+                    ]
+                    subprocess.run(cmd, check=True, capture_output=True, timeout=15)
+                    if can_sign:
+                        subprocess.run(
+                            [apksigner_bin, "sign", "--key", pk8_file, "--cert", pem_file, out_apk],
+                            check=True, capture_output=True, timeout=15
+                        )
+                        idsig = f"{out_apk}.idsig"
+                        if os.path.exists(idsig):
+                            os.remove(idsig)
+                    print(f"    [✓] Compiled & Signed Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
+            except Exception as e:
+                print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
+
+
+def fetch_common_proprietary_files(branch: str, arch: str, system_dir: str):
+    """
+    Downloads static proprietary permission XMLs, default permissions, sysconfigs,
+    and arch libraries (like libjni_latinimegoogle.so) from MindTheGapps.
+    """
+    print(f"[*] Ensuring MindTheGapps static proprietary configs & libs for branch '{branch}'...")
+    for prefix in ["common/proprietary", f"{arch}/proprietary"]:
+        tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path={prefix}&recursive=true&per_page=100"
+        try:
+            data = json.loads(fetch_url_bytes(tree_url, timeout=12).decode("utf-8"))
+            for item in data:
+                if item.get("type") != "blob":
+                    continue
+                rel_path = item["path"]
+                if not rel_path.startswith(f"{prefix}/"):
+                    continue
+                
+                sub_rel = rel_path[len(f"{prefix}/"):]
+                dst_path = os.path.join(system_dir, sub_rel)
+                
+                # Don't overwrite genuine extracted APKs, but always ensure XMLs/certs/configs/libs/missing APKs are present
+                if os.path.exists(dst_path) and dst_path.endswith(".apk"):
+                    continue
+                
+                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                file_url = f"{GITLAB_RAW_BASE}/{branch}/{rel_path}"
+                try:
+                    content = fetch_url_bytes(file_url, timeout=15)
+                    with open(dst_path, "wb") as f:
+                        f.write(content)
+                    print(f"    [+] Static Proprietary ({prefix}): {sub_rel} ({len(content)} bytes)")
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"    [!] Warning: Failed to query static proprietary tree '{prefix}': {e}")
+
+
+def sync_privapp_permissions(system_dir: str):
+    """
+    Scans every APK placed in priv-app/ across partitions (product, system_ext, system)
+    using aapt and guarantees all requested permissions are whitelisted in that partition's
+    etc/permissions/privapp-permissions-google*.xml so PackageManagerService never crashes.
+    """
+    import xml.etree.ElementTree as ET
+    aapt_bin = find_aapt_binary()
+    if not aapt_bin:
+        return
+
+    partitions = [
+        ("product", os.path.join(system_dir, "product"), "privapp-permissions-google-product.xml"),
+        ("system_ext", os.path.join(system_dir, "system_ext"), "privapp-permissions-google-system-ext.xml"),
+        ("system", system_dir, "privapp-permissions-google.xml"),
+    ]
+
+    for part_name, part_dir, default_xml_name in partitions:
+        priv_app_dir = os.path.join(part_dir, "priv-app")
+        if not os.path.isdir(priv_app_dir):
+            continue
+
+        perm_dir = os.path.join(part_dir, "etc", "permissions")
+        os.makedirs(perm_dir, exist_ok=True)
+
+        # Find target privapp-permissions XML file in this partition
+        target_xml = os.path.join(perm_dir, default_xml_name)
+        if not os.path.exists(target_xml):
+            existing_xmls = [
+                os.path.join(perm_dir, f) for f in os.listdir(perm_dir)
+                if f.startswith("privapp-permissions-google") and f.endswith(".xml")
+            ]
+            if existing_xmls:
+                target_xml = existing_xmls[0]
+
+        if os.path.exists(target_xml):
+            try:
+                tree = ET.parse(target_xml)
+                root = tree.getroot()
+            except Exception:
+                root = ET.Element("permissions")
+                tree = ET.ElementTree(root)
+        else:
+            root = ET.Element("permissions")
+            tree = ET.ElementTree(root)
+
+        pkg_nodes = {}
+        pkg_perms = {}
+        for elem in root.findall("privapp-permissions"):
+            p_name = elem.get("package")
+            if p_name:
+                pkg_nodes[p_name] = elem
+                s = pkg_perms.setdefault(p_name, set())
+                for child in elem.findall("permission"):
+                    s.add(child.get("name"))
+                for child in elem.findall("deny-permission"):
+                    s.add(child.get("name"))
+
+        modified = False
+        for r, _, files in os.walk(priv_app_dir):
+            for f in sorted(files):
+                if not f.endswith(".apk"):
+                    continue
+                apk_path = os.path.join(r, f)
+                try:
+                    out = subprocess.check_output([aapt_bin, "dump", "permissions", apk_path], text=True, timeout=15)
+                    lines = out.splitlines()
+                    if not lines:
+                        continue
+                    pkg = lines[0].split(": ")[1].strip()
+                    req = []
+                    for l in lines[1:]:
+                        if "uses-permission:" in l and "name='" in l:
+                            perm = l.split("name='")[1].split("'")[0]
+                            if perm not in req:
+                                req.append(perm)
+                    node = pkg_nodes.get(pkg)
+                    if node is None:
+                        node = ET.SubElement(root, "privapp-permissions", {"package": pkg})
+                        pkg_nodes[pkg] = node
+                    s = pkg_perms.setdefault(pkg, set())
+                    for perm in req:
+                        if perm not in s:
+                            ET.SubElement(node, "permission", {"name": perm})
+                            s.add(perm)
+                            modified = True
+                except Exception:
+                    pass
+
+        if modified:
+            try:
+                ET.indent(tree, space="    ")
+            except Exception:
+                pass
+            tree.write(target_xml, encoding="utf-8", xml_declaration=True)
+            print(f"    [✓] Auto-synchronized privapp-permissions for '{part_name}' -> {os.path.basename(target_xml)}")
 
 
 def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_version: str, arch: str):
@@ -229,7 +357,7 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     system_dir = os.path.join(target_pkg_dir, "system")
     os.makedirs(system_dir, exist_ok=True)
 
-    branch = BRANCH_MAP.get(android_version, "upsilon")
+    branch = BRANCH_MAP.get(android_version, "tau")
     sdk_version = SDK_MAP.get(android_version, 33)
 
     # 1. Fetch expected file list from MindTheGapps branch definitions
@@ -299,10 +427,13 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
             included_files.append(dst_rel)
             print(f"    [+] Included: {dst_rel} ({os.path.getsize(dst_path)/1024:.1f} KB)")
 
-    # 3. Ensure all MindTheGapps proprietary XML permissions & sysconfigs are present
-    fetch_common_proprietary_files(branch, system_dir)
+    # 3. Ensure all MindTheGapps proprietary XML permissions, sysconfigs & arch libs are present
+    fetch_common_proprietary_files(branch, arch, system_dir)
 
-    # 4. Compile / fetch RRO overlays
+    # 4. Auto-synchronize privapp-permissions for all extracted APKs to prevent bootloops
+    sync_privapp_permissions(system_dir)
+
+    # 5. Compile / fetch RRO overlays
     overlay_dir = os.path.join(system_dir, "product", "overlay")
     compile_or_fetch_overlays(branch, sdk_version, overlay_dir)
 
