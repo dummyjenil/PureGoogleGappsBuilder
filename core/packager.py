@@ -331,40 +331,42 @@ def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
         perm_dir = os.path.join(part_dir, "etc", "permissions")
         os.makedirs(perm_dir, exist_ok=True)
 
-        # Find target privapp-permissions XML file in this partition
+        existing_xmls = sorted([
+            os.path.join(perm_dir, f) for f in os.listdir(perm_dir)
+            if f.startswith("privapp-permissions") and f.endswith(".xml")
+        ])
         target_xml = os.path.join(perm_dir, default_xml_name)
-        if not os.path.exists(target_xml):
-            existing_xmls = [
-                os.path.join(perm_dir, f) for f in os.listdir(perm_dir)
-                if f.startswith("privapp-permissions-google") and f.endswith(".xml")
-            ]
-            if existing_xmls:
-                target_xml = existing_xmls[0]
+        if not existing_xmls:
+            existing_xmls = [target_xml]
+        elif target_xml not in existing_xmls:
+            target_xml = existing_xmls[0]
 
-        if os.path.exists(target_xml):
-            try:
-                tree = ET.parse(target_xml)
-                root = tree.getroot()
-            except Exception:
-                root = ET.Element("permissions")
-                tree = ET.ElementTree(root)
-        else:
-            root = ET.Element("permissions")
-            tree = ET.ElementTree(root)
-
+        xml_trees = {}
         pkg_nodes = {}
         pkg_perms = {}
-        for elem in root.findall("privapp-permissions"):
-            p_name = elem.get("package")
-            if p_name:
-                pkg_nodes[p_name] = elem
-                s = pkg_perms.setdefault(p_name, set())
-                for child in elem.findall("permission"):
-                    s.add(child.get("name"))
-                for child in elem.findall("deny-permission"):
-                    s.add(child.get("name"))
 
-        modified = False
+        for xfile in existing_xmls:
+            if os.path.exists(xfile):
+                try:
+                    t = ET.parse(xfile)
+                    r_el = t.getroot()
+                except Exception:
+                    r_el = ET.Element("permissions")
+                    t = ET.ElementTree(r_el)
+            else:
+                r_el = ET.Element("permissions")
+                t = ET.ElementTree(r_el)
+            xml_trees[xfile] = (t, r_el, False)
+            for elem in r_el.findall("privapp-permissions"):
+                p_name = elem.get("package")
+                if p_name:
+                    pkg_nodes[p_name] = (xfile, elem)
+                    s = pkg_perms.setdefault(p_name, set())
+                    for child in elem.findall("permission"):
+                        s.add(child.get("name"))
+                    for child in elem.findall("deny-permission"):
+                        s.add(child.get("name"))
+
         for r, _, files in os.walk(priv_app_dir):
             for f in sorted(files):
                 if not f.endswith(".apk"):
@@ -382,26 +384,32 @@ def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
                             perm = l.split("name='")[1].split("'")[0]
                             if perm in privileged_allowlist and perm not in req:
                                 req.append(perm)
-                    node = pkg_nodes.get(pkg)
-                    if node is None:
-                        node = ET.SubElement(root, "privapp-permissions", {"package": pkg})
-                        pkg_nodes[pkg] = node
+                    if pkg in pkg_nodes:
+                        xfile, node = pkg_nodes[pkg]
+                    else:
+                        xfile = target_xml
+                        _, r_el, _ = xml_trees[xfile]
+                        node = ET.SubElement(r_el, "privapp-permissions", {"package": pkg})
+                        pkg_nodes[pkg] = (xfile, node)
                     s = pkg_perms.setdefault(pkg, set())
                     for perm in req:
                         if perm not in s:
                             ET.SubElement(node, "permission", {"name": perm})
                             s.add(perm)
-                            modified = True
+                            t, r_el, _ = xml_trees[xfile]
+                            xml_trees[xfile] = (t, r_el, True)
                 except Exception:
                     pass
 
-        if modified:
-            try:
-                ET.indent(tree, space="    ")
-            except Exception:
-                pass
-            tree.write(target_xml, encoding="utf-8", xml_declaration=True)
-            print(f"    [✓] Auto-synchronized privileged permissions for '{part_name}' -> {os.path.basename(target_xml)}")
+        for xfile, (t, r_el, mod) in xml_trees.items():
+            if mod:
+                try:
+                    ET.indent(t, space="    ")
+                except Exception:
+                    pass
+                t.write(xfile, encoding="utf-8", xml_declaration=True)
+                print(f"    [✓] Auto-synchronized privileged permissions for '{part_name}' -> {os.path.basename(xfile)}")
+
 
 
 
