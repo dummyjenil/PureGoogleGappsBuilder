@@ -26,8 +26,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Cross-Check res/ + patch/ Against static/ (All 9 Versions)
-        run: python3 -m patch
+      - name: Compile All Python Modules & Verify res/ + patch/ Parity
+        run: |
+          python3 -m py_compile *.py core/*.py analyzer/*.py patch/*.py
+          python3 -m patch
 
       - name: Resolve Android 13.0.0 URLs from dl.google.com
         id: resolve
@@ -121,7 +123,8 @@ jobs:
             --version "${{ matrix.androidv }}" \
             --arch "${{ matrix.arch }}" \
             --local-zip "$ZIP_FILE" \
-            --save-fragment "out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json"
+            --save-fragment "out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json" \
+            --strict-gate
 
       - name: Upload Matrix Report Fragment
         if: always()

@@ -39,8 +39,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
-      - name: Strictly Verify res/ + patch/ Parity (All 9 Android Versions)
-        run: python3 -m patch
+      - name: Compile All Python Modules & Verify res/ + patch/ Parity
+        run: |
+          python3 -m py_compile *.py core/*.py analyzer/*.py patch/*.py
+          python3 -m patch
 
       - name: Fetch previous state from GitHub Release
         env:
@@ -99,8 +101,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
-      - name: Strictly Verify res/ + patch/ Before Build
-        run: python3 -m patch
+      - name: Strictly Verify Python Syntax & res/ + patch/ Before Build
+        run: |
+          python3 -m py_compile *.py core/*.py analyzer/*.py patch/*.py
+          python3 -m patch
 
       - name: Install High-Speed Extraction Utilities (aria2, 7z, erofs, simg2img)
         run: |
@@ -135,21 +139,8 @@ jobs:
             --version "${{ matrix.androidv }}" \
             --arch "${{ matrix.arch }}" \
             --local-zip "$ZIP_FILE" \
-            --save-fragment "$FRAG_FILE"
-          python3 -c "
-          import json, sys
-          with open('$FRAG_FILE') as f:
-              data = json.load(f)
-          for k, v in data.items():
-              mc = v.get('missing_count', 0)
-              ec = v.get('extra_count', 0)
-              mp = v.get('missing_xml_perms', 0)
-              print(f'[Strict Release Gate] {k}: missing_files={mc}, extra_files={ec}, missing_xml_perms={mp}')
-              if mc != 0 or ec != 0 or mp != 0:
-                  print(f'CRITICAL: Release gate failed for {k}! Refusing to upload to release.')
-                  sys.exit(1)
-          print('[✓] Strict 100% Release Gate Passed!')
-          "
+            --save-fragment "$FRAG_FILE" \
+            --strict-gate
 
       - name: Upload Tiny Matrix Report Fragment
         if: always()

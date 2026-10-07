@@ -137,6 +137,45 @@ def _sort_key(item: dict):
     return (parts, item.get("arch", ""))
 
 
+def enforce_strict_release_gate(comparison_results: list):
+    """
+    Strictly verifies that every analyzed package in `comparison_results` achieves:
+      - 100% file-tree match (`only_in_pure == []` and `only_in_mtg == []`)
+      - Zero missing XML permissions/entries (`missing_in_pure == []` across all XMLs)
+    Exits with non-zero status if any package fails the release gate.
+    """
+    if not comparison_results:
+        print("[!] CRITICAL: Release gate failed — 0 comparison results produced!")
+        raise SystemExit(1)
+
+    for item in comparison_results:
+        ver = item.get("version")
+        arch = item.get("arch")
+        only_pure = item.get("only_in_pure", [])
+        only_mtg = item.get("only_in_mtg", [])
+        missing_xml_items = []
+        for xc in item.get("xml_comparisons", []):
+            for m in xc.get("missing_in_pure", []):
+                missing_xml_items.append(f"{xc.get('path')}: {m}")
+
+        print(
+            f"[Strict Release Gate] Android {ver} ({arch}): "
+            f"missing_files={len(only_mtg)}, extra_files={len(only_pure)}, "
+            f"missing_xml_entries={len(missing_xml_items)}"
+        )
+        if only_mtg or only_pure or missing_xml_items:
+            print(f"[!] CRITICAL: Release gate FAILED for Android {ver} ({arch})!")
+            if only_mtg:
+                print(f"    - Missing files: {only_mtg}")
+            if only_pure:
+                print(f"    - Extra files: {only_pure}")
+            if missing_xml_items:
+                print(f"    - Missing XML entries: {missing_xml_items[:10]}")
+            raise SystemExit(1)
+
+    print("[✓] Strict 100% Release Gate Passed!")
+
+
 def run_comparison(
     target_ver: str = None,
     target_arch: str = None,
@@ -144,6 +183,7 @@ def run_comparison(
     local_zip: str = None,
     save_fragment: str = None,
     merge_fragments: str = None,
+    strict_gate: bool = False,
 ):
     # Pre-load any per-matrix fragments if --merge-fragments is provided
     merged_map = {}
@@ -256,6 +296,9 @@ def run_comparison(
 
     generate_reports(comparison_results)
 
+    if strict_gate:
+        enforce_strict_release_gate(comparison_results)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -267,6 +310,7 @@ def main():
     parser.add_argument("--local-zip", help="Path to a single built GoogleGapps-*.zip file (Matrix Mode)")
     parser.add_argument("--save-fragment", help="Save per-matrix JSON analysis fragment to path")
     parser.add_argument("--merge-fragments", help="Merge all per-matrix JSON fragments from directory")
+    parser.add_argument("--strict-gate", action="store_true", help="Fail with exit code 1 if tree or XML parity is not 100%")
     args = parser.parse_args()
 
     run_comparison(
@@ -276,6 +320,7 @@ def main():
         local_zip=args.local_zip,
         save_fragment=args.save_fragment,
         merge_fragments=args.merge_fragments,
+        strict_gate=args.strict_gate,
     )
 
 
