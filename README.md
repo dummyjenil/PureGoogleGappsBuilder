@@ -7,12 +7,12 @@
 ## ✨ Key Features
 
 - **100% Genuine Google Binaries**: Connects directly to Google's official SDK repositories (`sys-img2-3.xml`) to fetch unmodified `GmsCore`, `Phonesky`, `GoogleServicesFramework`, `Velvet`, `SetupWizard`, and native JNI libraries (`lib64`/`lib`).
-- **100% MindTheGapps Structural Parity**:
-  - Uses official `MindTheGapps/vendor_gapps` file trees across branches `pie` (9.0), `q` (10.0), `r` (11.0), `s` (12.0), `sigma` (12.1), `tau` (13.0), `upsilon` (14.0), and `vic` (15.0).
-  - Generates standard `META-INF/com/google/android/update-binary`, `addon.d/30-gapps.sh` OTA survival scripts, and static `toybox` utilities (`toybox-arm`, `toybox-x86`).
-- **Automated RRO Overlay Compilation**: Compiles runtime resource overlays (`GmsOverlay.apk`, `GmsSettingsProviderOverlay.apk`, `GmsSettingsOverlay.apk`, `GmsSetupWizardOverlay.apk`) on the fly using `aapt` + `apksigner` with automatic `android.jar` (`SDK <= 34` classic `resources.arsc`) resolution.
+- **100% MindTheGapps Structural Parity (Zero External Repo Dependency)**:
+  - Bundles all non-APK static configurations, permission templates, RRO overlay sources, `update-binary`, signing keys, and `toybox` utilities directly inside `static/` (`static/common/` and `static/9.0.0` through `static/16.0.0`), migrated from upstream [`MindTheGapps/vendor_gapps`](https://gitlab.com/MindTheGapps/vendor_gapps) on GitLab so builds have **zero runtime dependency on GitLab**.
+  - Uses AXML binary `AndroidManifest.xml` header inspection (`APK_PACKAGE_MAP`) during packaging fallback to locate renamed Google APKs directly inside unpacked Google Official SDK images by their canonical `package` name.
+- **Automated RRO Overlay Compilation**: Compiles runtime resource overlays (`GmsOverlay.apk`, `GmsSettingsProviderOverlay.apk`, `GmsSettingsOverlay.apk`, `GmsSetupWizardOverlay.apk`) on the fly from `static/<version>/overlay/` using `aapt` + `apksigner` with automatic `android.jar` (`SDK <= 34` classic `resources.arsc`) resolution.
 - **Bootloop-Proof Privileged Permission Sync (`ro.control_privapp_permissions=enforce`)**:
-  - Parses every APK placed in `priv-app/` (`system`, `product`, `system_ext`) via `androguard`.
+  - Parses every APK placed in `priv-app/` (`system`, `product`, `system_ext`) via `aapt`.
   - Filters requested permissions strictly to `signature|privileged` (`protectionLevel & 0x10` + APK-declared custom privileged permissions) and deduplicates across existing partition XMLs (`privapp-permissions-google*.xml`) so devices never bootloop on missing privileged permissions.
 - **Recovery-Standard Whole-File OTA Signing**: Signs flashable ZIPs with AOSP testkeys using `--v1-signer-name CERT` (`META-INF/CERT.RSA`, `META-INF/CERT.SF`, `META-INF/MANIFEST.MF`, and `META-INF/com/android/otacert`) matching `signapk.jar`.
 - **Deep Release Verification & Diff Analyzer (`analyzer/`)**:
@@ -23,16 +23,17 @@
 
 ## 📱 Supported Android Versions & Architectures
 
-| Android Version | API Level | Upstream Branch | Supported Architectures |
+| Android Version | API Level | Static Directory | Supported Architectures |
 | :--- | :---: | :---: | :--- |
-| **Android 9.0.0** (Pie) | `28` | `pie` | `arm64`, `x86` |
-| **Android 10.0.0** (Q) | `29` | `q` | `arm64`, `x86` |
-| **Android 11.0.0** (R) | `30` | `r` | `arm64`, `x86` |
-| **Android 12.0.0** (S) | `31` | `s` | `arm64`, `x86`, `x86_64` |
-| **Android 12.1.0** (S_V2) | `32` | `sigma` | `arm64`, `x86_64` |
-| **Android 13.0.0** (Tiramisu) | `33` | `tau` | `arm64`, `x86`, `x86_64` |
-| **Android 14.0.0** (UpsideDownCake) | `34` | `upsilon` | `arm64`, `x86_64` |
-| **Android 15.0.0** (VanillaIceCream) | `35` | `vic` | `arm64`, `x86_64` |
+| **Android 9.0.0** (Pie) | `28` | `static/9.0.0` | `arm64`, `x86` |
+| **Android 10.0.0** (Q) | `29` | `static/10.0.0` | `arm64`, `x86` |
+| **Android 11.0.0** (R) | `30` | `static/11.0.0` | `arm64`, `x86` |
+| **Android 12.0.0** (S) | `31` | `static/12.0.0` | `arm64`, `x86`, `x86_64` |
+| **Android 12.1.0** (S_V2) | `32` | `static/12.1.0` | `arm64`, `x86_64` |
+| **Android 13.0.0** (Tiramisu) | `33` | `static/13.0.0` | `arm64`, `x86`, `x86_64` |
+| **Android 14.0.0** (UpsideDownCake) | `34` | `static/14.0.0` | `arm64`, `x86_64` |
+| **Android 15.0.0** (VanillaIceCream) | `35` | `static/15.0.0` | `arm64`, `x86_64` |
+| **Android 16.0.0** (Baklava) | `36` | `static/16.0.0` | `arm64`, `x86_64` |
 
 ---
 
@@ -41,19 +42,24 @@
 ```text
 PureGoogleGappsBuilder/
 ├── check_updates.py              # Scans dl.google.com sys-img2-3.xml & builds CI matrix
-├── extract_pure_gapps.py         # Main CLI entry point to build a single GApps ZIP
+├── extract_pure_gapps.py         # Main CLI entry point to build a single GApps ZIP (supports --cache-dir)
 ├── analyze_all_releases.py       # CLI entry point for single-target & full release analysis
+├── static/                       # Self-contained non-APK static configs, overlays, keys & toybox
+│   ├── common/                   # Shared AOSP testkeys (sign/) & static toybox binaries (toybox/)
+│   └── 9.0.0 .. 16.0.0/          # Per-version proprietary-files-*.txt, update-binary, overlay/ & XMLs/libs
 ├── core/
-│   ├── downloader.py             # Multi-retry streaming downloader with progress verification
+│   ├── constants.py              # SDK_MAP, APK_PACKAGE_MAP, & privileged permissions registry
+│   ├── downloader.py             # Multi-retry aria2c / streaming downloader with cache support
 │   ├── extractor.py              # Unpacks Super/GPT, EROFS (fsck.erofs), and EXT4 (7z) images
-│   └── packager.py               # Structures GApps tree, compiles overlays, syncs XMLs & signs ZIP
+│   └── packager.py               # Structures GApps tree, AXML package-name fallback, overlays & signing
 ├── analyzer/
 │   ├── zip_inspector.py          # Local & HTTP Range remote ZIP central directory reader
 │   ├── xml_analyzer.py           # Semantic <privapp-permissions> & <config> XML parser & differ
 │   ├── apk_analyzer.py           # APK AndroidManifest binary XML versionName/versionCode extractor
 │   └── report_generator.py       # Generates per-matrix JSON fragments & Markdown comparison reports
 └── .github/workflows/
-    └── pure_google_gapps.yml     # Automated daily & manual GitHub Actions CI/CD pipeline
+    ├── pure_google_gapps.yml     # Automated monthly & manual GitHub Actions release pipeline
+    └── test_android13.yml        # Cached test & deep analysis workflow for Android 13.0.0
 ```
 
 ---

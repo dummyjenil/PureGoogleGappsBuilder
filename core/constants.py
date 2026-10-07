@@ -3,18 +3,6 @@ Shared Constants and Installer Templates for PureGoogleGappsBuilder
 Compatible with Android 9.0.0 to 15.0.0 (Pie to VanillaIceCream)
 """
 
-BRANCH_MAP = {
-    "9.0.0": "pi",
-    "10.0.0": "qoppa",
-    "11.0.0": "rho",
-    "12.0.0": "sigma",
-    "12.1.0": "sigma",
-    "13.0.0": "tau",
-    "14.0.0": "upsilon",
-    "15.0.0": "vic",
-    "16.0.0": "baklava",
-}
-
 SDK_MAP = {
     "9.0.0": 28,
     "10.0.0": 29,
@@ -25,6 +13,44 @@ SDK_MAP = {
     "14.0.0": 34,
     "15.0.0": 35,
     "16.0.0": 36,
+}
+
+# Maps target APK filenames (lowercase) to their official AndroidManifest package name
+# Used during packaging fallback to locate APKs inside Google SDK images even if renamed
+APK_PACKAGE_MAP = {
+    "androidautostub.apk": "com.google.android.projection.gearhead",
+    "androidautostubprebuilt.apk": "com.google.android.projection.gearhead",
+    "androidmigrate.apk": "com.google.android.apps.pixelmigrate",
+    "androidmigrateprebuilt.apk": "com.google.android.apps.pixelmigrate",
+    "gmscore.apk": "com.google.android.gms",
+    "prebuiltgmscore.apk": "com.google.android.gms",
+    "gmsoverlay.apk": "com.mtg.gmsoverlay",
+    "gmssettingsoverlay.apk": "com.mtg.gmssettingsoverlay",
+    "gmssettingsprovideroverlay.apk": "com.mtg.gmssettingsprovideroverlay",
+    "gmssetupwizardoverlay.apk": "com.mtg.gmssetupwizardoverlay",
+    "googlebackuptransport.apk": "com.google.android.backuptransport",
+    "googlecalendarsyncadapter.apk": "com.google.android.syncadapters.calendar",
+    "googlecontactssyncadapter.apk": "com.google.android.syncadapters.contacts",
+    "googlefeedback.apk": "com.google.android.feedback",
+    "googlepartnersetup.apk": "com.google.android.partnersetup",
+    "partnersetupprebuilt.apk": "com.google.android.partnersetup",
+    "googlerestore.apk": "com.google.android.apps.restore",
+    "googlerestoreprebuilt.apk": "com.google.android.apps.restore",
+    "googleservicesframework.apk": "com.google.android.gsf",
+    "googletts.apk": "com.google.android.tts",
+    "speechservicesbygoogle.apk": "com.google.android.tts",
+    "markupgoogle.apk": "com.google.android.markup",
+    "markupgoogle_v2.apk": "com.google.android.markup",
+    "phonesky.apk": "com.android.vending",
+    "prebuiltexchange3google.apk": "com.google.android.gm.exchange",
+    "exchange3google.apk": "com.google.android.gm.exchange",
+    "setupwizard.apk": "com.google.android.setupwizard",
+    "setupwizardprebuilt.apk": "com.google.android.setupwizard",
+    "velvet.apk": "com.google.android.googlequicksearchbox",
+    "velvettitan.apk": "com.google.android.googlequicksearchbox",
+    "wellbeing.apk": "com.google.android.apps.wellbeing",
+    "wellbeingprebuilt.apk": "com.google.android.apps.wellbeing",
+    "talkback.apk": "com.google.android.marvin.talkback",
 }
 
 ARCH_TO_TOYBOX = {

@@ -14,7 +14,7 @@ from core.extractor import extract_partition_from_container
 from core.packager import structure_gapps_hierarchy, create_flashable_zip
 
 
-def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_dir: str = "out"):
+def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_dir: str = "out", cache_dir: str = None):
     """
     Builds a flashable GApps package from official Google SDK image.
     """
@@ -33,7 +33,11 @@ def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_di
         shutil.rmtree(work_dir, ignore_errors=True)
     os.makedirs(work_dir, exist_ok=True)
     
-    downloaded_zip = os.path.join(work_dir, "google_sysimg.zip")
+    if cache_dir:
+        os.makedirs(cache_dir, exist_ok=True)
+        downloaded_zip = os.path.join(os.path.abspath(cache_dir), f"google_sysimg_{android_version}_{arch}.zip")
+    else:
+        downloaded_zip = os.path.join(work_dir, "google_sysimg.zip")
     extracted_raw_dir = os.path.join(work_dir, "extracted_raw")
     gapps_pkg_dir = os.path.join(work_dir, "gapps_package")
 
@@ -86,9 +90,10 @@ def main():
     parser.add_argument("--abi", default="x86_64", help="Target ABI (e.g. x86_64, arm64-v8a)")
     parser.add_argument("--url", required=True, help="Official dl.google.com image download URL")
     parser.add_argument("--out-dir", default="out", help="Output directory for generated packages")
+    parser.add_argument("--cache-dir", default=None, help="Optional cache directory for downloaded Google system images")
     args = parser.parse_args()
 
-    build_pure_gapps(args.android, args.arch, args.abi, args.url, args.out_dir)
+    build_pure_gapps(args.android, args.arch, args.abi, args.url, args.out_dir, args.cache_dir)
 
 
 if __name__ == "__main__":

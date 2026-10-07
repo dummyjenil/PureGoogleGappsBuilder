@@ -11,10 +11,8 @@ import zlib
 import zipfile
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from core.constants import BRANCH_MAP
+from core.constants import APK_PACKAGE_MAP
 from .zip_inspector import RemoteZipInspector
-
-GITLAB_RAW_BASE = "https://gitlab.com/MindTheGapps/vendor_gapps/-/raw"
 
 
 def parse_axml_version(axml_bytes: bytes) -> dict:
@@ -144,94 +142,8 @@ def _extract_axml_from_local_zip(local_zip_path: str, apk_rel_path: str) -> dict
         return {}
 
 
-def _extract_axml_from_gitlab_raw_apk(branch: str, arch: str, apk_rel_path: str) -> dict:
-    """Uses two tiny HTTP Range requests (~20KB total) on MindTheGapps GitLab raw APK."""
-    sub_rel = apk_rel_path[len("system/") :] if apk_rel_path.startswith("system/") else apk_rel_path
-    candidates = [
-        f"{GITLAB_RAW_BASE}/{branch}/{arch}/proprietary/{sub_rel}",
-        f"{GITLAB_RAW_BASE}/{branch}/common/proprietary/{sub_rel}",
-    ]
-    for url in candidates:
-        try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-0"}
-            )
-            with urllib.request.urlopen(req, timeout=10) as r:
-                if r.status not in (200, 206):
-                    continue
-                final_url = r.geturl()
-                cr = r.headers.get("Content-Range", "")
-                size = (
-                    int(cr.split("/")[-1])
-                    if "/" in cr
-                    else int(r.headers.get("Content-Length", 0))
-                )
-            if size <= 0:
-                continue
-            tail_len = min(size, 65536)
-            tail, _ = RemoteZipInspector.fetch_range(
-                final_url, size - tail_len, size - 1, timeout=10
-            )
-            eocd = tail.rfind(b"\x50\x4b\x05\x06")
-            if eocd == -1:
-                continue
-            _, _, _, _, cd_size, cd_off, _ = struct.unpack(
-                "<HHHHIIH", tail[eocd + 4 : eocd + 22]
-            )
-            if cd_off < size - tail_len:
-                cd, _ = RemoteZipInspector.fetch_range(
-                    final_url, cd_off, cd_off + cd_size - 1, timeout=10
-                )
-            else:
-                cd = tail[
-                    cd_off - (size - len(tail)) : cd_off - (size - len(tail)) + cd_size
-                ]
-            ptr = 0
-            while ptr + 46 <= len(cd):
-                if cd[ptr : ptr + 4] != b"\x50\x4b\x01\x02":
-                    break
-                (
-                    _,
-                    _,
-                    _,
-                    _,
-                    meth,
-                    _,
-                    _,
-                    crc,
-                    csize,
-                    usize,
-                    nlen,
-                    elen,
-                    clen,
-                    _,
-                    _,
-                    _,
-                    off,
-                ) = struct.unpack("<IHHHHHHIIIHHHHHII", cd[ptr : ptr + 46])
-                name = cd[ptr + 46 : ptr + 46 + nlen].decode("utf-8", errors="ignore")
-                if name == "AndroidManifest.xml":
-                    raw, _ = RemoteZipInspector.fetch_range(
-                        final_url, off, off + 30 + 128 + csize, timeout=10
-                    )
-                    nl, el = struct.unpack("<HH", raw[26:30])
-                    comp = raw[30 + nl + el : 30 + nl + el + csize]
-                    axml = (
-                        comp
-                        if meth == 0
-                        else zlib.decompress(comp, -zlib.MAX_WBITS)
-                    )
-                    res = parse_axml_version(axml)
-                    if res:
-                        return res
-                ptr += 46 + nlen + elen + clen
-        except Exception:
-            continue
-    return {}
-
-
-def _extract_axml_from_remote_zip_stream(entry_meta: dict) -> dict:
-    """Streams chunks from a remote ZIP entry until AndroidManifest.xml is encountered."""
+def _extract_axml_from_remote_zip_stream(entry_meta: dict, expected_pkg: str = "") -> dict:
+    """Streams chunks from a remote ZIP entry until the outer APK's AndroidManifest.xml is encountered."""
     url = entry_meta.get("url")
     off = entry_meta.get("offset", 0)
     csize = entry_meta.get("compressed_size", 0)
@@ -239,9 +151,9 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict) -> dict:
     if not url or csize <= 0:
         return {}
 
+    fallback_res = {}
     try:
-        # Cap stream range to 16MB max so huge APKs don't stall remote runs
-        max_stream = min(csize + 512, 16 * 1024 * 1024)
+        max_stream = min(csize + 512, 32 * 1024 * 1024)
         req = urllib.request.Request(
             url,
             headers={
@@ -252,7 +164,7 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict) -> dict:
         dobj = zlib.decompressobj(-zlib.MAX_WBITS) if meth == 8 else None
         buf = b""
         header_skipped = False
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             while True:
                 chunk = resp.read(65536)
                 if not chunk:
@@ -299,38 +211,39 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict) -> dict:
                                 if icsize > 0
                                 else buf[dstart:]
                             )
-                            axml = (
-                                raw_axml
-                                if imeth == 0
-                                else zlib.decompressobj(-zlib.MAX_WBITS).decompress(
+                            try:
+                                axml = (
                                     raw_axml
+                                    if imeth == 0
+                                    else zlib.decompressobj(-zlib.MAX_WBITS).decompress(
+                                        raw_axml
+                                    )
                                 )
-                            )
-                            res = parse_axml_version(axml)
-                            if res:
-                                return res
+                                res = parse_axml_version(axml)
+                                if res:
+                                    pkg = res.get("package", "")
+                                    if not expected_pkg or pkg == expected_pkg:
+                                        return res
+                                    if not fallback_res:
+                                        fallback_res = res
+                            except Exception:
+                                pass
                     idx = pos + 19
                 if len(buf) > 4 * 1024 * 1024 and b"AndroidManifest.xml" not in buf:
                     buf = buf[-131072:]
     except Exception:
         pass
-    return {}
+    return fallback_res
 
 
-def get_apk_metadata(
-    apk_rel_path: str, entry_meta: dict, branch: str, arch: str, is_mtg: bool
-) -> dict:
+def get_apk_metadata(apk_rel_path: str, entry_meta: dict) -> dict:
+    expected_pkg = APK_PACKAGE_MAP.get(os.path.basename(apk_rel_path).lower(), "")
     if entry_meta.get("local_zip") and os.path.isfile(entry_meta["local_zip"]):
         res = _extract_axml_from_local_zip(entry_meta["local_zip"], apk_rel_path)
         if res:
             return res
 
-    if is_mtg:
-        res = _extract_axml_from_gitlab_raw_apk(branch, arch, apk_rel_path)
-        if res:
-            return res
-
-    return _extract_axml_from_remote_zip_stream(entry_meta)
+    return _extract_axml_from_remote_zip_stream(entry_meta, expected_pkg=expected_pkg)
 
 
 def compare_apk_files(ver: str, arch: str, pure_info: dict, mtg_info: dict) -> list:
@@ -338,7 +251,6 @@ def compare_apk_files(ver: str, arch: str, pure_info: dict, mtg_info: dict) -> l
     Compares all common .apk files between PureGoogleGapps and MindTheGapps.
     Even a 1-byte or CRC32 difference triggers versionName & versionCode extraction.
     """
-    branch = BRANCH_MAP.get(ver, "tau")
     pure_files = pure_info.get("files", {})
     mtg_files = mtg_info.get("files", {})
 
@@ -356,12 +268,14 @@ def compare_apk_files(ver: str, arch: str, pure_info: dict, mtg_info: dict) -> l
         m_sz = m_meta["size"]
         p_crc = p_meta.get("crc32", "")
         m_crc = m_meta.get("crc32", "")
+        bname = os.path.basename(af)
+        known_pkg = APK_PACKAGE_MAP.get(bname.lower(), "")
 
         if p_sz == m_sz and p_crc == m_crc:
             apk_results.append({
                 "path": af,
-                "name": os.path.basename(af),
-                "package": "",
+                "name": bname,
+                "package": known_pkg,
                 "pure_size": p_sz,
                 "mtg_size": m_sz,
                 "diff_bytes": 0,
@@ -381,14 +295,15 @@ def compare_apk_files(ver: str, arch: str, pure_info: dict, mtg_info: dict) -> l
         m_sz = m_meta["size"]
         diff_b = p_sz - m_sz
         diff_pct = (abs(diff_b) / max(p_sz, m_sz, 1)) * 100.0
+        bname = os.path.basename(af)
 
-        p_ver = get_apk_metadata(af, p_meta, branch, arch, is_mtg=False)
-        m_ver = get_apk_metadata(af, m_meta, branch, arch, is_mtg=True)
+        p_ver = get_apk_metadata(af, p_meta)
+        m_ver = get_apk_metadata(af, m_meta)
 
-        pkg = p_ver.get("package") or m_ver.get("package") or ""
+        pkg = p_ver.get("package") or m_ver.get("package") or APK_PACKAGE_MAP.get(bname.lower(), "")
         return {
             "path": af,
-            "name": os.path.basename(af),
+            "name": bname,
             "package": pkg,
             "pure_size": p_sz,
             "mtg_size": m_sz,

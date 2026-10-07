@@ -1,0 +1,153 @@
+#!/sbin/sh
+
+OUTFD="/proc/self/fd/$2"
+ZIP=$3
+
+exec_util() {
+  LD_LIBRARY_PATH=$LD_PATH $UTILS $1
+}
+
+set_con() {
+  exec_util "chcon -h u:object_r:"$1":s0 $2"
+  exec_util "chcon u:object_r:"$1":s0 $2"
+}
+
+set_perm() {
+  exec_util "chmod $1 $2"
+}
+
+set_owner() {
+  exec_util "chown $1:$2 $3"
+}
+
+ui_print() {
+  echo "ui_print $1" > "$OUTFD";
+  echo "ui_print" > "$OUTFD";
+}
+
+ui_print "**********************"
+ui_print "MindTheGapps installer"
+ui_print "**********************"
+
+SYSTEMASROOT=`getprop ro.build.system_root_image`
+
+ui_print "Mounting system partition"
+
+# Ensure system is unmounted so mounting succeeds
+umount /system || true
+
+if [ "$SYSTEMASROOT" == "true" ]; then
+  CURRENTSLOT=`getprop ro.boot.slot_suffix`
+  if [ ! -z "$CURRENTSLOT" ]; then
+    if [ "$CURRENTSLOT" == "_a" ]; then
+      TARGETSYSTEM=/dev/block/bootdevice/by-name/system_a
+    else
+      TARGETSYSTEM=/dev/block/bootdevice/by-name/system_b
+    fi
+  else
+    TARGETSYSTEM=/dev/block/bootdevice/by-name/system
+  fi
+  mkdir -p /system_root
+  if mount -o rw $TARGETSYSTEM /system_root && mount -o bind /system_root/system /system; then
+    ui_print "/system mounted"
+  else
+    ui_print "Could not mount /system! Aborting"
+    exit 1
+  fi
+else
+  if mount /system; then
+    ui_print "/system mounted"
+  else
+    ui_print "Could not mount /system! Aborting"
+    exit 1
+  fi
+fi
+
+if [ -f /system/bin/toybox ]; then
+  UTILS=/system/bin/toybox
+  LD_PATH=/system/lib
+else
+  ui_print "Could not find /system/bin/toybox! Aborting"
+  exit 1
+fi
+
+DIRS="addon.d app priv-app framework etc lib"
+
+if [ -d /system/lib64 ]; then
+  DIRS="$DIRS lib64"
+  LD_PATH=/system/lib64
+fi
+
+LOWMEM=1572864
+MEM=`grep MemTotal /proc/meminfo | awk '{ print $2 }'`
+STORAGE=`exec_util "df /system" | grep -v Filesystem | awk '{ print $4 }'`
+STORAGE_BUFFER=10240
+
+ui_print "Extracting files"
+cd /tmp
+unzip -o "$ZIP"
+exec_util "rm -rf META-INF"
+cd system
+
+NEEDED_STORAGE=`expr $(exec_util "du -s ." | awk '{ print $1 }') + $STORAGE_BUFFER`
+
+if [ "$MEM" -lt "$LOWMEM" ] || [ "$STORAGE" -lt "$NEEDED_STORAGE" ]; then
+  ui_print "Low resource device detected, removing large extras"
+  exec_util "rm -rf app/MarkupGoogle"
+  exec_util "rm -rf priv-app/AndroidMigratePrebuilt"
+  exec_util "rm -rf priv-app/SetupWizard"
+  exec_util "rm -rf priv-app/Velvet"
+  NEEDED_STORAGE=`expr $(exec_util "du -s ." | awk '{ print $1 }') + $STORAGE_BUFFER`
+  if [ "$STORAGE" -lt "$NEEDED_STORAGE" ]; then
+    ui_print "Not enough space for GApps! Aborting"
+    cd ..
+    exec_util "rm -rf system"
+    exit 1
+  fi
+fi
+
+ui_print "Generating addon.d file"
+cat addon.d/addond_head > addon.d/30-gapps.sh
+for f in `exec_util "find . -type f"`; do
+  line=$(echo "$f" | sed 's/\.\///')
+  echo "$line" >> addon.d/30-gapps.sh
+done
+cat addon.d/addond_tail >> addon.d/30-gapps.sh
+rm addon.d/addond_head addon.d/addond_tail
+ui_print "Preparing files for copying"
+for dirs in $DIRS; do
+  set_perm 0755 $dir
+  for d in `exec_util "find ./$dir -type d"`; do
+    set_perm 0755 $d
+    set_owner root root $d
+  done
+  for f in `exec_util "find ./$dir -type f"`; do
+    type=$(echo "$f" | sed 's/.*\.//')
+    if [ "$type" == "sh" ] || [ "$type" == "$f" ]; then
+      set_perm 0755 $f
+    else
+      set_perm 0644 $f
+    fi
+    set_owner root root $f
+    set_con system_file $f
+  done
+done
+
+ui_print "Copying files"
+exec_util "cp --preserve=a -r ./* /system/"
+if [ -e priv-app/SetupWizard ] ; then
+    exec_util "rm -rf /system/priv-app/Provision"
+fi
+ui_print "Cleaning up files"
+cd ../
+exec_util "rm -rf system"
+
+ui_print "Unmounting system partition"
+if umount -l /system; then
+  if [ "$SYSTEMASROOT" == "true" ]; then
+    umount -l /system_root
+  fi
+fi
+
+ui_print "Done!"
+exit 0

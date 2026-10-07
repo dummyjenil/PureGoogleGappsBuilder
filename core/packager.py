@@ -1,51 +1,48 @@
 """
 Flashable ZIP Packager and Filesystem Structuring Module for PureGoogleGappsBuilder.
 Formats APKs, libraries, permissions, addon.d, overlays, and Recovery installer metadata
-to match MindTheGapps standard across Android 9.0.0 to 15.0.0.
+using local `static/` assets and package-name fallback scanning across Android 9.0.0 to 16.0.0.
 """
 
 import os
-import sys
 import shutil
 import subprocess
 import zipfile
-import datetime
-import urllib.request
-import json
 import tempfile
 from .constants import (
-    BRANCH_MAP,
     SDK_MAP,
+    APK_PACKAGE_MAP,
     ARCH_TO_TOYBOX,
     ADDOND_HEAD,
     ADDOND_TAIL,
     KNOWN_PRIVILEGED_PERMISSIONS,
 )
+from analyzer.apk_analyzer import parse_axml_version
 
-GITLAB_RAW_BASE = "https://gitlab.com/MindTheGapps/vendor_gapps/-/raw"
-GITLAB_API_BASE = "https://gitlab.com/api/v4/projects/MindTheGapps%2Fvendor_gapps/repository"
-
-
-def fetch_url_bytes(url: str, timeout: int = 15) -> bytes:
-    """Fetch raw bytes from a URL with browser User-Agent and timeout"""
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (PureGappsBuilder/1.0)"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read()
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_ROOT = os.path.join(REPO_ROOT, "static")
 
 
-def fetch_target_file_list_for_branch(branch: str, arch: str) -> dict:
+def _get_version_static_dir(android_version: str) -> str:
+    ver_dir = os.path.join(STATIC_ROOT, android_version)
+    if os.path.isdir(ver_dir):
+        return ver_dir
+    return os.path.join(STATIC_ROOT, "13.0.0")
+
+
+def load_target_file_list_for_version(android_version: str, arch: str) -> dict:
     """
-    Fetches proprietary file definitions from MindTheGapps branch dynamically.
+    Loads proprietary file definitions from local `static/<android_version>/` directory.
     Returns a dict mapping destination paths -> source patterns.
     """
+    ver_dir = _get_version_static_dir(android_version)
     prop_files = [
         "proprietary-files-common.txt",
         "proprietary-files-common-nongrouper.txt",
         f"proprietary-files-{arch}.txt",
         f"proprietary-files-{arch}-nongrouper.txt",
     ]
-    
-    # Alternate arch names fallback (e.g. x86_64 vs x86)
+
     if arch == "x86_64":
         prop_files.append("proprietary-files-x86.txt")
     elif arch in ["arm64", "arm64-v8a"]:
@@ -54,23 +51,22 @@ def fetch_target_file_list_for_branch(branch: str, arch: str) -> dict:
     file_mappings = {}
 
     for pfile in prop_files:
-        url = f"{GITLAB_RAW_BASE}/{branch}/{pfile}"
+        pfile_path = os.path.join(ver_dir, pfile)
+        if not os.path.isfile(pfile_path):
+            continue
         try:
-            data = fetch_url_bytes(url).decode("utf-8", errors="ignore")
+            with open(pfile_path, "r", encoding="utf-8", errors="ignore") as f:
+                data = f.read()
             for line in data.splitlines():
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                # Strip leading '-' (optional file marker in LineageOS extract-files syntax)
                 if line.startswith("-"):
                     line = line[1:].strip()
-                # Strip hash
                 if "|" in line:
                     line = line.split("|")[0].strip()
-                # Strip flags
                 if ";" in line:
                     line = line.split(";")[0].strip()
-                # Check remap (src:dst)
                 if ":" in line:
                     src, dst = line.split(":")
                     file_mappings[dst.strip()] = src.strip()
@@ -86,9 +82,6 @@ def find_android_jar(sdk_version: int):
     """
     Locates an aapt-v1-compatible android.jar (SDK <= 34) fast by inspecting SDK
     platforms directories without recursive globbing.
-    Note: Android 15+ (android-35, android-36) uses compact resource tables in android.jar
-    that legacy aapt v1 cannot parse, whereas android-34 (or <= 34) compiles overlays for
-    all Android 12–16 branches cleanly.
     """
     target_sdk = min(sdk_version, 34)
     sdk_roots = [
@@ -127,7 +120,11 @@ def find_aapt_binary():
     w = shutil.which("aapt")
     if w:
         return w
-    android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or "/usr/local/lib/android/sdk"
+    android_home = (
+        os.environ.get("ANDROID_HOME")
+        or os.environ.get("ANDROID_SDK_ROOT")
+        or "/usr/local/lib/android/sdk"
+    )
     btd = os.path.join(android_home, "build-tools")
     if os.path.isdir(btd):
         for ver in sorted(os.listdir(btd), reverse=True):
@@ -137,27 +134,26 @@ def find_aapt_binary():
     return None
 
 
-def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir: str):
+def compile_local_overlays(android_version: str, sdk_version: int, target_overlay_dir: str):
     """
-    Compiles Runtime Resource Overlays (RROs) for Android 12+ using aapt (-0 arsc) and signs them with apksigner
+    Compiles Runtime Resource Overlays (RROs) for Android 12+ from `static/<version>/overlay/`
+    using aapt (-0 arsc) and signs them with local AOSP testkeys.
     """
     if sdk_version < 31:
-        return  # Overlays are only present in Android 12 (API 31)+
+        return
 
-    print(f"[*] Building Runtime Resource Overlays (RROs) for branch '{branch}' (SDK {sdk_version})...")
+    ver_dir = _get_version_static_dir(android_version)
+    src_overlay_root = os.path.join(ver_dir, "overlay")
+    if not os.path.isdir(src_overlay_root):
+        return
+
+    print(f"[*] Building Runtime Resource Overlays (RROs) for Android {android_version} (SDK {sdk_version})...")
     os.makedirs(target_overlay_dir, exist_ok=True)
 
-    # Check which overlays exist in the branch
-    tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay&per_page=100"
-    overlays_to_build = []
-    try:
-        data = json.loads(fetch_url_bytes(tree_url, timeout=10).decode("utf-8"))
-        overlays_to_build = [x["name"] for x in data if x.get("type") == "tree"]
-    except Exception:
-        # Fallback standard overlays for Android 12+
-        overlays_to_build = ["GmsOverlay", "GmsSettingsProviderOverlay"]
-        if sdk_version >= 34:
-            overlays_to_build.extend(["GmsSettingsOverlay", "GmsSetupWizardOverlay"])
+    overlays_to_build = sorted([
+        d for d in os.listdir(src_overlay_root)
+        if os.path.isdir(os.path.join(src_overlay_root, d))
+    ])
 
     android_jar = find_android_jar(sdk_version)
     aapt_bin = find_aapt_binary()
@@ -167,102 +163,65 @@ def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir:
         print(f"    [!] Warning: aapt ({aapt_bin}) or android.jar ({android_jar}) not found. Skipping overlay compilation.")
         return
 
-    with tempfile.TemporaryDirectory() as key_td:
-        pk8_file = os.path.join(key_td, "testkey.pk8")
-        pem_file = os.path.join(key_td, "testkey.x509.pem")
-        can_sign = False
-        if apksigner_bin:
-            try:
-                with open(pk8_file, "wb") as f:
-                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/tau/build/sign/testkey.pk8", timeout=10))
-                with open(pem_file, "wb") as f:
-                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/tau/build/sign/testkey.x509.pem", timeout=10))
-                can_sign = True
-            except Exception:
-                pass
+    pk8_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.pk8")
+    pem_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.x509.pem")
+    can_sign = bool(apksigner_bin and os.path.isfile(pk8_file) and os.path.isfile(pem_file))
 
-        for overlay_name in overlays_to_build:
-            out_apk = os.path.join(target_overlay_dir, f"{overlay_name}.apk")
-            if os.path.exists(out_apk):
-                continue
+    for overlay_name in overlays_to_build:
+        out_apk = os.path.join(target_overlay_dir, f"{overlay_name}.apk")
+        if os.path.exists(out_apk):
+            continue
 
-            base_overlay_url = f"{GITLAB_RAW_BASE}/{branch}/overlay/{overlay_name}"
-            try:
-                with tempfile.TemporaryDirectory() as td:
-                    manifest_data = fetch_url_bytes(f"{base_overlay_url}/AndroidManifest.xml", timeout=10)
-                    manifest_file = os.path.join(td, "AndroidManifest.xml")
-                    with open(manifest_file, "wb") as f:
-                        f.write(manifest_data)
+        ov_src_dir = os.path.join(src_overlay_root, overlay_name)
+        manifest_file = os.path.join(ov_src_dir, "AndroidManifest.xml")
+        res_dir = os.path.join(ov_src_dir, "res")
+        if not os.path.isfile(manifest_file) or not os.path.isdir(res_dir):
+            continue
 
-                    res_val_dir = os.path.join(td, "res", "values")
-                    os.makedirs(res_val_dir, exist_ok=True)
-
-                    # List value XMLs
-                    vals_tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay/{overlay_name}/res/values"
-                    vdata = json.loads(fetch_url_bytes(vals_tree_url, timeout=10).decode("utf-8"))
-                    for vitem in vdata:
-                        vname = vitem["name"]
-                        vbytes = fetch_url_bytes(f"{base_overlay_url}/res/values/{vname}", timeout=10)
-                        with open(os.path.join(res_val_dir, vname), "wb") as vf:
-                            vf.write(vbytes)
-
-                    cmd = [
-                        aapt_bin, "package", "-f",
-                        "-M", manifest_file,
-                        "-S", os.path.join(td, "res"),
-                        "-I", android_jar,
-                        "-0", "arsc",
-                        "-F", out_apk,
-                    ]
-                    subprocess.run(cmd, check=True, capture_output=True, timeout=15)
-                    if can_sign:
-                        subprocess.run(
-                            [apksigner_bin, "sign", "--key", pk8_file, "--cert", pem_file, out_apk],
-                            check=True, capture_output=True, timeout=15
-                        )
-                        idsig = f"{out_apk}.idsig"
-                        if os.path.exists(idsig):
-                            os.remove(idsig)
-                    print(f"    [✓] Compiled & Signed Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
-            except Exception as e:
-                print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
-
-
-def fetch_common_proprietary_files(branch: str, arch: str, system_dir: str):
-    """
-    Downloads static proprietary permission XMLs, default permissions, sysconfigs,
-    and arch libraries (like libjni_latinimegoogle.so) from MindTheGapps.
-    """
-    print(f"[*] Ensuring MindTheGapps static proprietary configs & libs for branch '{branch}'...")
-    for prefix in ["common/proprietary", f"{arch}/proprietary"]:
-        tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path={prefix}&recursive=true&per_page=100"
         try:
-            data = json.loads(fetch_url_bytes(tree_url, timeout=12).decode("utf-8"))
-            for item in data:
-                if item.get("type") != "blob":
-                    continue
-                rel_path = item["path"]
-                if not rel_path.startswith(f"{prefix}/"):
-                    continue
-                
-                sub_rel = rel_path[len(f"{prefix}/"):]
-                dst_path = os.path.join(system_dir, sub_rel)
-                
-                # Don't overwrite genuine extracted APKs, but always ensure XMLs/certs/configs/libs/missing APKs are present
-                if os.path.exists(dst_path) and dst_path.endswith(".apk"):
-                    continue
-                
-                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-                file_url = f"{GITLAB_RAW_BASE}/{branch}/{rel_path}"
-                try:
-                    content = fetch_url_bytes(file_url, timeout=15)
-                    with open(dst_path, "wb") as f:
-                        f.write(content)
-                    print(f"    [+] Static Proprietary ({prefix}): {sub_rel} ({len(content)} bytes)")
-                except Exception:
-                    pass
+            cmd = [
+                aapt_bin, "package", "-f",
+                "-M", manifest_file,
+                "-S", res_dir,
+                "-I", android_jar,
+                "-0", "arsc",
+                "-F", out_apk,
+            ]
+            subprocess.run(cmd, check=True, capture_output=True, timeout=15)
+            if can_sign:
+                subprocess.run(
+                    [apksigner_bin, "sign", "--key", pk8_file, "--cert", pem_file, out_apk],
+                    check=True, capture_output=True, timeout=15,
+                )
+                idsig = f"{out_apk}.idsig"
+                if os.path.exists(idsig):
+                    os.remove(idsig)
+            print(f"    [✓] Compiled & Signed Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
         except Exception as e:
-            print(f"    [!] Warning: Failed to query static proprietary tree '{prefix}': {e}")
+            print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
+
+
+def copy_local_static_proprietary_files(android_version: str, arch: str, system_dir: str):
+    """
+    Copies static non-APK proprietary permission XMLs, default permissions, sysconfigs,
+    certs, and arch libraries (like libjni_latinimegoogle.so) from `static/<version>/`.
+    """
+    ver_dir = _get_version_static_dir(android_version)
+    print(f"[*] Applying static proprietary configs & libs from static/{android_version}/...")
+    for prefix in ["common/proprietary", f"{arch}/proprietary"]:
+        src_root = os.path.join(ver_dir, prefix)
+        if not os.path.isdir(src_root):
+            continue
+        for root, _, files in os.walk(src_root):
+            for fname in sorted(files):
+                if fname.endswith(".apk"):
+                    continue
+                src_full = os.path.join(root, fname)
+                sub_rel = os.path.relpath(src_full, src_root).replace("\\", "/")
+                dst_path = os.path.join(system_dir, sub_rel)
+                os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                shutil.copy2(src_full, dst_path)
+                print(f"    [+] Static Proprietary ({prefix}): {sub_rel} ({os.path.getsize(dst_path)} bytes)")
 
 
 def _extract_privileged_perms_from_apk(aapt_bin: str, apk_or_jar_path: str) -> set:
@@ -298,8 +257,7 @@ def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
     """
     Scans every APK placed in priv-app/ across partitions (product, system_ext, system)
     using aapt and guarantees all requested signature|privileged permissions are whitelisted
-    in that partition's etc/permissions/privapp-permissions-google*.xml (skipping normal
-    non-privileged permissions like INTERNET/WAKE_LOCK so XML size matches MindTheGapps).
+    in that partition's etc/permissions/privapp-permissions-google*.xml.
     """
     import xml.etree.ElementTree as ET
     aapt_bin = find_aapt_binary()
@@ -311,7 +269,6 @@ def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
     if android_jar:
         privileged_allowlist |= _extract_privileged_perms_from_apk(aapt_bin, android_jar)
 
-    # Also include any custom privileged permissions declared by APKs in system_dir
     for r, _, files in os.walk(system_dir):
         for f in files:
             if f.endswith(".apk"):
@@ -411,42 +368,71 @@ def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
                 print(f"    [✓] Auto-synchronized privileged permissions for '{part_name}' -> {os.path.basename(xfile)}")
 
 
+def _index_extracted_apks_by_package(extracted_dir: str) -> dict:
+    """
+    Reads the initial binary AndroidManifest.xml (AXML) from every APK in the unpacked
+    Google Official SDK image to map `package_name -> [apk_paths]`.
+    Enables package-name fallback lookup when Google renames APKs across SDK releases.
+    """
+    pkg_to_apks = {}
+    print("[*] Indexing all APKs inside unpacked Google SDK image by package name (AXML header scan)...")
+    for root, _, files in os.walk(extracted_dir):
+        for f in sorted(files):
+            if not f.endswith(".apk"):
+                continue
+            full_p = os.path.join(root, f)
+            try:
+                with zipfile.ZipFile(full_p, "r") as zf:
+                    axml_bytes = zf.read("AndroidManifest.xml")
+                meta = parse_axml_version(axml_bytes)
+                pkg = meta.get("package", "")
+                if pkg:
+                    pkg_to_apks.setdefault(pkg, []).append(full_p)
+                    rel_p = os.path.relpath(full_p, extracted_dir).replace("\\", "/")
+                    vname = meta.get("versionName", "")
+                    vcode = meta.get("versionCode", "")
+                    if pkg.startswith("com.google.") or pkg.startswith("com.android.vending"):
+                        print(f"    [SDK-APK] {pkg:<45} -> {rel_p} (v={vname}, code={vcode})")
+            except Exception:
+                pass
+    print(f"    [✓] Indexed {len(pkg_to_apks)} unique APK package names in Google SDK image.")
+    return pkg_to_apks
 
 
 def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_version: str, arch: str):
     """
     Structures genuine GApps files into MindTheGapps-identical hierarchy.
-    Strictly follows MindTheGapps component definitions to avoid bloat and duplicate APKs.
+    Uses path matching, filename alias matching, and package-name AXML fallback scanning.
     """
-    print(f"[*] Structuring MindTheGapps hierarchy for Android {android_version} ({arch})...")
+    print(f"[*] Structuring GApps hierarchy for Android {android_version} ({arch})...")
     os.makedirs(target_pkg_dir, exist_ok=True)
 
     system_dir = os.path.join(target_pkg_dir, "system")
     os.makedirs(system_dir, exist_ok=True)
 
-    branch = BRANCH_MAP.get(android_version, "tau")
     sdk_version = SDK_MAP.get(android_version, 33)
+    ver_dir = _get_version_static_dir(android_version)
 
-    # 1. Fetch expected file list from MindTheGapps branch definitions
-    target_mappings = fetch_target_file_list_for_branch(branch, arch)
-    print(f"    [✓] Loaded {len(target_mappings)} target file definitions from branch '{branch}'.")
+    # 1. Load expected file list from local static/<version>/ definitions
+    target_mappings = load_target_file_list_for_version(android_version, arch)
+    print(f"    [✓] Loaded {len(target_mappings)} target file definitions from static/{android_version}/.")
 
-    # Index all extracted files by relative path and by base filename
+    # Index all extracted files by relative path, by base filename, and by APK package name
     extracted_files_map = {}
     extracted_basename_map = {}
-    for root, dirs, files in os.walk(extracted_dir):
+    for root, _, files in os.walk(extracted_dir):
         for f in files:
             full_p = os.path.join(root, f)
             rel_p = os.path.relpath(full_p, extracted_dir).replace("\\", "/")
             extracted_files_map[rel_p.lower()] = full_p
             base_key = f.lower()
-            if base_key not in extracted_basename_map:
-                extracted_basename_map[base_key] = []
-            extracted_basename_map[base_key].append(full_p)
+            extracted_basename_map.setdefault(base_key, []).append(full_p)
+
+    extracted_pkg_map = _index_extracted_apks_by_package(extracted_dir)
 
     included_files = []
+    missing_targets = []
 
-    # Alias mapping for prebuilt names in Google images
     ALIASES = {
         "gmscore.apk": ["prebuiltgmscore.apk", "gmscore.apk"],
         "prebuiltgmscore.apk": ["gmscore.apk", "prebuiltgmscore.apk"],
@@ -460,28 +446,39 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
         "partnersetupprebuilt.apk": ["googlepartnersetup.apk", "partnersetupprebuilt.apk"],
         "wellbeing.apk": ["wellbeingprebuilt.apk", "wellbeing.apk"],
         "wellbeingprebuilt.apk": ["wellbeing.apk", "wellbeingprebuilt.apk"],
+        "speechservicesbygoogle.apk": ["speechservicesbygoogle.apk", "googletts.apk"],
+        "googletts.apk": ["googletts.apk", "speechservicesbygoogle.apk"],
+        "markupgoogle_v2.apk": ["markupgoogle_v2.apk", "markupgoogle.apk"],
+        "markupgoogle.apk": ["markupgoogle.apk", "markupgoogle_v2.apk"],
+        "velvettitan.apk": ["velvettitan.apk", "velvet.apk"],
     }
 
-    # 2. Match and copy files according to MindTheGapps targets (strictly no duplicates)
+    # 2. Match and copy files according to target mappings
     for dst_rel, src_rel in target_mappings.items():
         dst_path = os.path.join(system_dir, dst_rel)
         matched_src = None
+        match_method = "path"
+        base_fname = os.path.basename(src_rel).lower()
 
-        # Check exact relative path
         if src_rel.lower() in extracted_files_map:
             matched_src = extracted_files_map[src_rel.lower()]
         elif dst_rel.lower() in extracted_files_map:
             matched_src = extracted_files_map[dst_rel.lower()]
         else:
-            base_fname = os.path.basename(src_rel).lower()
             candidates = extracted_basename_map.get(base_fname, [])
-            
-            # Check aliases if direct candidate not found
             if not candidates and base_fname in ALIASES:
                 for alias_name in ALIASES[base_fname]:
                     if alias_name in extracted_basename_map:
                         candidates = extracted_basename_map[alias_name]
+                        match_method = f"alias:{alias_name}"
                         break
+
+            # Package-Name Fallback Lookup inside Google SDK Image
+            if not candidates and base_fname.endswith(".apk"):
+                expected_pkg = APK_PACKAGE_MAP.get(base_fname)
+                if expected_pkg and expected_pkg in extracted_pkg_map:
+                    candidates = extracted_pkg_map[expected_pkg]
+                    match_method = f"package-fallback:{expected_pkg}"
 
             if candidates:
                 part_hint = dst_rel.split("/")[0].lower() if "/" in dst_rel else ""
@@ -492,47 +489,54 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
             shutil.copy2(matched_src, dst_path)
             included_files.append(dst_rel)
-            print(f"    [+] Included: {dst_rel} ({os.path.getsize(dst_path)/1024:.1f} KB)")
+            src_short = os.path.relpath(matched_src, extracted_dir).replace("\\", "/")
+            print(f"    [+] Included [{match_method}]: {dst_rel} <- {src_short} ({os.path.getsize(dst_path)/1024:.1f} KB)")
+        else:
+            missing_targets.append((dst_rel, base_fname, APK_PACKAGE_MAP.get(base_fname, "N/A")))
 
-    # 3. Ensure all MindTheGapps proprietary XML permissions, sysconfigs & arch libs are present
-    fetch_common_proprietary_files(branch, arch, system_dir)
+    # 3. Copy local non-APK static proprietary XML permissions, sysconfigs & arch libs
+    copy_local_static_proprietary_files(android_version, arch, system_dir)
+
+    # Log any targets that were neither in Google SDK image nor satisfied by static non-APK files
+    still_missing = [
+        (dst_rel, bname, pkg)
+        for (dst_rel, bname, pkg) in missing_targets
+        if not os.path.exists(os.path.join(system_dir, dst_rel))
+    ]
+    if still_missing:
+        print(f"    [!] Notice: {len(still_missing)} target(s) not present in Google SDK image:")
+        for dst_rel, bname, pkg in still_missing:
+            print(f"        - MISSING: {dst_rel} (filename={bname}, expected_pkg={pkg})")
 
     # 4. Auto-synchronize privapp-permissions for all extracted APKs to prevent bootloops
     sync_privapp_permissions(system_dir, sdk_version)
 
-    # 5. Compile / fetch RRO overlays
+    # 5. Compile local RRO overlays
     overlay_dir = os.path.join(system_dir, "product", "overlay")
-    compile_or_fetch_overlays(branch, sdk_version, overlay_dir)
+    compile_local_overlays(android_version, sdk_version, overlay_dir)
 
-    # 4. Download architecture-specific toybox binary
-    toybox_name = ARCH_TO_TOYBOX.get(arch, "toybox-x86_64")
-    toybox_url = f"{GITLAB_RAW_BASE}/{branch}/{toybox_name}"
-    toybox_dest = os.path.join(target_pkg_dir, "toybox")
-    print(f"[*] Downloading {toybox_name} for Recovery installation environment...")
-    try:
-        tbytes = fetch_url_bytes(toybox_url, timeout=15)
-        with open(toybox_dest, "wb") as f:
-            f.write(tbytes)
-        os.chmod(toybox_dest, 0o755)
-        print(f"    [✓] Saved toybox: {os.path.getsize(toybox_dest)/1024:.1f} KB")
-    except Exception as e:
-        print(f"    [!] Warning: Could not download toybox: {e}")
+    # 6. Copy architecture-specific toybox binary from static/common/toybox/ (for Android 10+ / SDK >= 29)
+    if sdk_version >= 29:
+        toybox_name = ARCH_TO_TOYBOX.get(arch, "toybox-x86_64")
+        toybox_src = os.path.join(STATIC_ROOT, "common", "toybox", toybox_name)
+        toybox_dest = os.path.join(target_pkg_dir, "toybox")
+        if os.path.isfile(toybox_src):
+            shutil.copy2(toybox_src, toybox_dest)
+            os.chmod(toybox_dest, 0o755)
+            print(f"    [✓] Copied local {toybox_name} -> toybox ({os.path.getsize(toybox_dest)/1024:.1f} KB)")
 
-    # 5. Add Recovery Installer & Addon.d Survival Scripts
-    print("[*] Setting up update-binary and addon.d scripts...")
+    # 7. Add Recovery Installer & Addon.d Survival Scripts
+    print("[*] Setting up update-binary and addon.d scripts from local static/...")
     meta_inf_dir = os.path.join(target_pkg_dir, "META-INF", "com", "google", "android")
     os.makedirs(meta_inf_dir, exist_ok=True)
 
     update_bin_dest = os.path.join(meta_inf_dir, "update-binary")
-    update_bin_url = f"{GITLAB_RAW_BASE}/{branch}/build/meta/com/google/android/update-binary"
-    try:
-        ubytes = fetch_url_bytes(update_bin_url, timeout=15)
-        with open(update_bin_dest, "wb") as f:
-            f.write(ubytes)
+    update_bin_src = os.path.join(ver_dir, "update-binary")
+    if os.path.isfile(update_bin_src):
+        shutil.copy2(update_bin_src, update_bin_dest)
         os.chmod(update_bin_dest, 0o755)
-        print("    [✓] Fetched official MindTheGapps update-binary")
-    except Exception:
-        # Fallback built-in update-binary
+        print(f"    [✓] Copied local static/{android_version}/update-binary")
+    else:
         with open(update_bin_dest, "w", newline="\n") as f:
             f.write("#!/sbin/sh\n# Fallback\n")
         os.chmod(update_bin_dest, 0o755)
@@ -541,7 +545,6 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     with open(updater_script_dest, "w", newline="\n") as f:
         f.write("# Dummy updater-script for TWRP\n")
 
-    # Addon.d survival script templates
     addon_dir = os.path.join(system_dir, "addon.d")
     os.makedirs(addon_dir, exist_ok=True)
     with open(os.path.join(addon_dir, "addond_head"), "w", newline="\n") as f:
@@ -549,7 +552,6 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     with open(os.path.join(addon_dir, "addond_tail"), "w", newline="\n") as f:
         f.write(ADDOND_TAIL.strip() + "\n")
 
-    # Build prop info (exact MTG format, introduced in Android 10 / SDK 29+)
     if sdk_version >= 29:
         build_prop_path = os.path.join(target_pkg_dir, "build.prop")
         with open(build_prop_path, "w", newline="\n") as f:
@@ -562,32 +564,29 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
 
 def create_flashable_zip(source_dir: str, output_zip_path: str):
     """
-    Packs directory into deterministic Recovery-flashable ZIP and signs with AOSP testkeys.
+    Packs directory into deterministic Recovery-flashable ZIP and signs with local AOSP testkeys.
     """
     print(f"[*] Packaging and Signing Recovery Flashable ZIP: {os.path.basename(output_zip_path)}...")
     output_zip_path = os.path.abspath(output_zip_path)
     if os.path.exists(output_zip_path):
         os.remove(output_zip_path)
 
-    # Fetch AOSP testkey.x509.pem for META-INF/com/android/otacert (matches signapk -w)
-    otacert_path = os.path.join(source_dir, "META-INF", "com", "android", "otacert")
-    try:
-        os.makedirs(os.path.dirname(otacert_path), exist_ok=True)
-        with open(otacert_path, "wb") as f:
-            f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.x509.pem", timeout=10))
-    except Exception:
-        pass
+    pk8_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.pk8")
+    pem_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.x509.pem")
 
-    # Use standard fixed date for reproducibility (2009-01-01)
+    otacert_path = os.path.join(source_dir, "META-INF", "com", "android", "otacert")
+    if os.path.isfile(pem_file):
+        os.makedirs(os.path.dirname(otacert_path), exist_ok=True)
+        shutil.copy2(pem_file, otacert_path)
+
     deterministic_datetime = (2009, 1, 1, 0, 0, 0)
 
-    # 1. Create standard Deflate ZIP
     with zipfile.ZipFile(output_zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
-        for root, dirs, files in os.walk(source_dir):
+        for root, _, files in os.walk(source_dir):
             for file in sorted(files):
                 full_path = os.path.join(root, file)
                 rel_path = os.path.relpath(full_path, source_dir).replace("\\", "/")
-                
+
                 zinfo = zipfile.ZipInfo(filename=rel_path, date_time=deterministic_datetime)
                 zinfo.compress_type = zipfile.ZIP_DEFLATED
                 if file in ["update-binary", "toybox", "70-gapps.sh", "30-gapps.sh"] or file.endswith(".sh"):
@@ -598,28 +597,18 @@ def create_flashable_zip(source_dir: str, output_zip_path: str):
                 with open(full_path, "rb") as f_in:
                     zipf.writestr(zinfo, f_in.read())
 
-    # 2. Sign with standard AOSP testkey using apksigner (--v1-signer-name CERT to match signapk)
     has_apksigner = shutil.which("apksigner") is not None
-    if has_apksigner:
+    if has_apksigner and os.path.isfile(pk8_file) and os.path.isfile(pem_file):
         try:
-            with tempfile.TemporaryDirectory() as td:
-                pk8_file = os.path.join(td, "testkey.pk8")
-                pem_file = os.path.join(td, "testkey.x509.pem")
-
-                with open(pk8_file, "wb") as f:
-                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.pk8", timeout=10))
-                with open(pem_file, "wb") as f:
-                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.x509.pem", timeout=10))
-
-                cmd = [
-                    "apksigner", "sign",
-                    "--v1-signer-name", "CERT",
-                    "--key", pk8_file,
-                    "--cert", pem_file,
-                    "--min-sdk-version", "28",
-                    output_zip_path,
-                ]
-                subprocess.run(cmd, check=True, capture_output=True, timeout=30)
-                print("    [✓] ZIP signed successfully with AOSP testkey (apksigner)")
+            cmd = [
+                "apksigner", "sign",
+                "--v1-signer-name", "CERT",
+                "--key", pk8_file,
+                "--cert", pem_file,
+                "--min-sdk-version", "28",
+                output_zip_path,
+            ]
+            subprocess.run(cmd, check=True, capture_output=True, timeout=30)
+            print("    [✓] ZIP signed successfully with local AOSP testkey (apksigner)")
         except Exception as e:
             print(f"    [!] Warning: Failed to sign ZIP: {e}")
