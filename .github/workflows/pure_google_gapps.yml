@@ -16,7 +16,6 @@ permissions:
   contents: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   PYTHONUNBUFFERED: "1"
 
 concurrency:
@@ -36,7 +35,7 @@ jobs:
       update_count: ${{ steps.check.outputs.update_count }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Fetch previous state from GitHub Release
         env:
@@ -60,14 +59,14 @@ jobs:
 
           python3 check_updates.py \
             --state-file latest_revisions.json \
-            --output-json new_state.json $FORCE_FLAG
+            --output-json latest_revisions.json $FORCE_FLAG
 
       - name: Upload State Artifact
         if: steps.check.outputs.has_updates == 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: google-revisions-state
-          path: new_state.json
+          name: latest_revisions_state
+          path: latest_revisions.json
           compression-level: 0
           retention-days: 1
 
@@ -85,7 +84,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install High-Speed Extraction Utilities (aria2, 7z, erofs, simg2img)
         run: |
@@ -125,26 +124,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - name: Download Built Packages
+      - name: Download All Artifacts (Packages + State)
         uses: actions/download-artifact@v8
         with:
           path: release_packages
           merge-multiple: true
 
-      - name: Download State Artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: google-revisions-state
-          path: .
-        continue-on-error: true
-
-      - name: Prepare Assets
+      - name: Verify Release Assets
         run: |
-          if [ -f "new_state.json" ]; then
-            cp new_state.json release_packages/latest_revisions.json
-          fi
+          echo "=== Release Assets to Upload ==="
           ls -lh release_packages/
 
       - name: Upload & Replace Assets in Single Permanent Release
