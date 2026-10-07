@@ -40,8 +40,12 @@ def load_target_file_list_for_version(android_version: str, arch: str) -> dict:
 
     if arch == "x86_64":
         prop_files.append("proprietary-files-x86.txt")
+        if not os.path.isfile(os.path.join(ver_dir, "proprietary-files-x86_64-nongrouper.txt")):
+            prop_files.append("proprietary-files-x86-nongrouper.txt")
     elif arch in ["arm64", "arm64-v8a"]:
         prop_files.append("proprietary-files-arm.txt")
+        if not os.path.isfile(os.path.join(ver_dir, f"proprietary-files-{arch}-nongrouper.txt")):
+            prop_files.append("proprietary-files-arm-nongrouper.txt")
 
     file_mappings = {}
 
@@ -202,8 +206,11 @@ def copy_local_static_proprietary_files(android_version: str, arch: str, system_
     certs, and arch libraries (like libjni_latinimegoogle.so) from `static/<version>/`.
     """
     ver_dir = _get_version_static_dir(android_version)
-    print(f"[*] Applying static proprietary configs & libs from static/{android_version}/...")
-    for prefix in ["common/proprietary", f"{arch}/proprietary"]:
+    print(f"[*] Applying static proprietary configs & libs for Android {android_version} ({arch})...")
+    arch_prefix = f"{arch}/proprietary"
+    if not os.path.isdir(os.path.join(ver_dir, arch_prefix)) and arch == "x86_64":
+        arch_prefix = "x86/proprietary"
+    for prefix in ["common/proprietary", arch_prefix]:
         src_root = os.path.join(ver_dir, prefix)
         if not os.path.isdir(src_root):
             continue
@@ -422,20 +429,29 @@ def fetch_missing_apks_via_github_range(
 
     zip_url = None
     search_versions = [android_version]
-    if android_version == "16.0.0":
+    if android_version == "12.0.0":
+        search_versions.append("12.1.0")
+    elif android_version == "16.0.0":
         search_versions.append("15.0.0")
+
+    search_archs = [arch]
+    if arch == "x86_64":
+        search_archs.append("x86")
 
     try:
         req = urllib.request.Request(api_url, headers=headers)
         with urllib.request.urlopen(req, timeout=15) as resp:
             releases = json.loads(resp.read().decode("utf-8"))
         for target_ver in search_versions:
-            prefix = f"MindTheGapps-{target_ver}-{arch}-"
-            for rel in releases:
-                for asset in rel.get("assets", []):
-                    name = asset.get("name", "")
-                    if name.startswith(prefix) and name.endswith(".zip") and not name.endswith(".sum"):
-                        zip_url = asset.get("browser_download_url", "")
+            for target_arch in search_archs:
+                prefix = f"MindTheGapps-{target_ver}-{target_arch}-"
+                for rel in releases:
+                    for asset in rel.get("assets", []):
+                        name = asset.get("name", "")
+                        if name.startswith(prefix) and name.endswith(".zip") and not name.endswith(".sum"):
+                            zip_url = asset.get("browser_download_url", "")
+                            break
+                    if zip_url:
                         break
                 if zip_url:
                     break

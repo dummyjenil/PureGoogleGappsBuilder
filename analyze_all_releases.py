@@ -235,6 +235,19 @@ def run_comparison(
                 "local_path": local_zip,
             }
 
+    def _resolve_mtg_baseline(v: str, a: str):
+        if (v, a) in mtg_packages:
+            return mtg_packages[(v, a)]
+        if v == "12.0.0":
+            if ("12.1.0", a) in mtg_packages:
+                return mtg_packages[("12.1.0", a)]
+        if v == "16.0.0":
+            if ("15.0.0", a) in mtg_packages:
+                return mtg_packages[("15.0.0", a)]
+        if a == "x86_64" and (v, "x86") in mtg_packages:
+            return mtg_packages[(v, "x86")]
+        return None
+
     all_keys = sorted(set(pure_packages.keys()) | set(mtg_packages.keys()))
     matching_pairs = []
 
@@ -246,8 +259,10 @@ def run_comparison(
             continue
         if key in merged_map:
             continue  # Already analyzed during the matrix job!
-        if key in pure_packages and key in mtg_packages:
-            matching_pairs.append((ver, arch, pure_packages[key], mtg_packages[key]))
+        if key in pure_packages:
+            m_pkg = _resolve_mtg_baseline(ver, arch)
+            if m_pkg:
+                matching_pairs.append((ver, arch, pure_packages[key], m_pkg))
 
     inspected_data = {}
     urls_to_fetch = {}
