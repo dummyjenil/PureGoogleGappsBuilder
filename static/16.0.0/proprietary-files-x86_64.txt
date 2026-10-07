@@ -1,3 +1,0 @@
-product/lib64/libjni_latinimegoogle.so|67772ec6576feb79748440f765cad6321aef63d0
-product/priv-app/GmsCore/GmsCore.apk;PRESIGNED
-product/priv-app/Phonesky/Phonesky.apk;PRESIGNED

@@ -1,11 +1,13 @@
 """
-Version-Specific Patching Engine for PureGoogleGappsBuilder.
+Version-Specific Patching Engine & Strict Integrity Verifier for PureGoogleGappsBuilder.
 Materializes per-version static trees from canonical `res/` files by applying
 version-specific Python patch scripts (`patch/v9_0_0.py` .. `patch/v16_0_0.py`)
-and cross-checks against `static/` for 100% path, byte (SHA-256), and XML semantic parity.
+and strictly enforces 100% path, byte (SHA-256), and XML semantic parity against
+`patch/expected_manifest.json` before allowing any build or release to proceed.
 """
 
 import os
+import json
 import shutil
 import hashlib
 import tempfile
@@ -15,7 +17,8 @@ from pathlib import Path
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES_ROOT = os.path.join(REPO_ROOT, "res")
-STATIC_ROOT = os.path.join(REPO_ROOT, "static")
+PATCH_ROOT = os.path.dirname(os.path.abspath(__file__))
+EXPECTED_MANIFEST_PATH = os.path.join(PATCH_ROOT, "expected_manifest.json")
 
 VERSION_MODULES = {
     "9.0.0": "patch.v9_0_0",
@@ -30,6 +33,17 @@ VERSION_MODULES = {
 }
 
 _MATERIALIZED_DIRS = {}
+_EXPECTED_MANIFEST_CACHE = None
+
+
+def _load_expected_manifest() -> dict:
+    global _EXPECTED_MANIFEST_CACHE
+    if _EXPECTED_MANIFEST_CACHE is None:
+        if not os.path.isfile(EXPECTED_MANIFEST_PATH):
+            raise RuntimeError(f"CRITICAL: Missing expected verification manifest at {EXPECTED_MANIFEST_PATH}")
+        with open(EXPECTED_MANIFEST_PATH, "r", encoding="utf-8") as f:
+            _EXPECTED_MANIFEST_CACHE = json.load(f)
+    return _EXPECTED_MANIFEST_CACHE
 
 
 def copy_res(res_rel: str, out_dir: str, target_rel: str, executable: bool = False):
@@ -110,10 +124,9 @@ def apply_version_patch(android_version: str, out_dir: str) -> str:
     return out_dir
 
 
-def parse_xml_semantics(xml_path: str) -> list:
+def parse_xml_semantics_bytes(xml_bytes: bytes) -> list:
     """Extracts canonical sorted (tag, attributes, text) tuples for semantic XML comparison."""
-    with open(xml_path, "r", encoding="utf-8") as f:
-        root = ET.fromstring(f.read())
+    root = ET.fromstring(xml_bytes.decode("utf-8"))
     items = []
     for elem in root.iter():
         attrs = tuple(sorted(elem.attrib.items()))
@@ -122,26 +135,53 @@ def parse_xml_semantics(xml_path: str) -> list:
     return sorted(items)
 
 
+def verify_common_assets() -> dict:
+    """Strictly verifies `res/sign/*` and `res/toybox/*` against `expected_manifest.json`."""
+    manifest = _load_expected_manifest()
+    common_expected = manifest.get("common", {})
+    if not common_expected:
+        raise RuntimeError("CRITICAL: Missing 'common' section in expected_manifest.json")
+
+    verified = 0
+    for rel, exp in sorted(common_expected.items()):
+        f_res = Path(RES_ROOT) / rel
+        if not f_res.is_file():
+            raise RuntimeError(f"[Strict Verification Failed] Missing common asset: res/{rel}")
+        raw = f_res.read_bytes()
+        if len(raw) != exp["size"]:
+            raise RuntimeError(
+                f"[Strict Verification Failed] Size mismatch for res/{rel}: expected {exp['size']}, got {len(raw)}"
+            )
+        actual_sha = hashlib.sha256(raw).hexdigest()
+        if actual_sha != exp["sha256"]:
+            raise RuntimeError(
+                f"[Strict Verification Failed] SHA-256 mismatch for res/{rel}: expected {exp['sha256']}, got {actual_sha}"
+            )
+        verified += 1
+    return {"files_total": len(common_expected), "byte_matches": verified}
+
+
 def cross_check_version_with_static(android_version: str, generated_dir: str) -> dict:
     """
-    Cross-checks a materialized version directory against `static/<android_version>`
-    for 100% file path, SHA-256 byte, and XML semantic parity.
+    Strictly verifies a materialized version directory against `patch/expected_manifest.json`
+    for 100% file path, byte size, SHA-256 digest, and parsed XML semantic parity.
+    Raises RuntimeError immediately on any mismatch.
     """
-    static_ver_dir = os.path.join(STATIC_ROOT, android_version)
-    if not os.path.isdir(static_ver_dir):
-        return {"checked": False, "reason": f"static/{android_version} not present"}
+    manifest = _load_expected_manifest()
+    if android_version not in manifest:
+        raise RuntimeError(f"[Strict Verification Failed] Unknown Android version {android_version} in manifest")
 
-    orig_root = Path(static_ver_dir)
+    expected_map = manifest[android_version]
     gen_root = Path(generated_dir)
 
-    orig_files = sorted(str(p.relative_to(orig_root)).replace("\\", "/") for p in orig_root.rglob("*") if p.is_file())
+    orig_files = sorted(expected_map.keys())
     gen_files = sorted(str(p.relative_to(gen_root)).replace("\\", "/") for p in gen_root.rglob("*") if p.is_file())
 
     if orig_files != gen_files:
         missing = sorted(set(orig_files) - set(gen_files))
         extra = sorted(set(gen_files) - set(orig_files))
-        raise AssertionError(
-            f"[Cross-Check Failed] Path mismatch for Android {android_version}: missing={missing}, extra={extra}"
+        raise RuntimeError(
+            f"[Strict Verification Failed] Path mismatch for Android {android_version}: missing={missing}, extra={extra}"
         )
 
     byte_matches = 0
@@ -149,18 +189,32 @@ def cross_check_version_with_static(android_version: str, generated_dir: str) ->
     xml_matches = 0
 
     for rel in orig_files:
-        f_orig = orig_root / rel
+        exp = expected_map[rel]
         f_gen = gen_root / rel
-        b_orig = f_orig.read_bytes()
         b_gen = f_gen.read_bytes()
-        if hashlib.sha256(b_orig).digest() != hashlib.sha256(b_gen).digest():
-            raise AssertionError(f"[Cross-Check Failed] SHA-256 byte mismatch in {android_version}/{rel}")
+
+        if len(b_gen) != exp["size"]:
+            raise RuntimeError(
+                f"[Strict Verification Failed] Byte size mismatch in {android_version}/{rel}: "
+                f"expected {exp['size']} B, got {len(b_gen)} B"
+            )
+
+        actual_sha = hashlib.sha256(b_gen).hexdigest()
+        if actual_sha != exp["sha256"]:
+            raise RuntimeError(
+                f"[Strict Verification Failed] SHA-256 mismatch in {android_version}/{rel}: "
+                f"expected {exp['sha256']}, got {actual_sha}"
+            )
         byte_matches += 1
 
         if rel.endswith(".xml"):
             xml_total += 1
-            if parse_xml_semantics(str(f_orig)) != parse_xml_semantics(str(f_gen)):
-                raise AssertionError(f"[Cross-Check Failed] XML semantic mismatch in {android_version}/{rel}")
+            sem = parse_xml_semantics_bytes(b_gen)
+            sem_sha = hashlib.sha256(json.dumps(sem, sort_keys=True).encode("utf-8")).hexdigest()
+            if len(sem) != exp.get("xml_elem_count") or sem_sha != exp.get("xml_semantic_sha256"):
+                raise RuntimeError(
+                    f"[Strict Verification Failed] XML semantic mismatch in {android_version}/{rel}"
+                )
             xml_matches += 1
 
     return {
@@ -176,34 +230,37 @@ def cross_check_version_with_static(android_version: str, generated_dir: str) ->
 def get_patched_version_dir(android_version: str) -> str:
     """
     Returns a materialized directory for `android_version` built from `res/` + `patch/v*.py`.
-    Caches the materialized directory per process and cross-checks against `static/<android_version>`.
+    Strictly verifies both common assets and the materialized version directory against
+    `patch/expected_manifest.json` before returning; aborts build on any mismatch.
     """
     target_ver = android_version if android_version in VERSION_MODULES else "13.0.0"
     if target_ver in _MATERIALIZED_DIRS and os.path.isdir(_MATERIALIZED_DIRS[target_ver]):
         return _MATERIALIZED_DIRS[target_ver]
+
+    verify_common_assets()
 
     out_dir = os.path.join(tempfile.gettempdir(), f"pure_gapps_patched_{os.getpid()}_{target_ver}")
     print(f"[*] Materializing static assets for Android {target_ver} via res/ + patch/v{target_ver.replace('.', '_')}.py...")
     apply_version_patch(target_ver, out_dir)
 
     res = cross_check_version_with_static(target_ver, out_dir)
-    if res.get("checked"):
-        print(
-            f"    [✓] Cross-checked against static/{target_ver}: "
-            f"{res['byte_matches']}/{res['files_total']} files 100% SHA-256 match, "
-            f"{res['xml_matches']}/{res['xml_total']} XMLs 100% semantic match"
-        )
+    print(
+        f"    [✓] Strict Verification Passed ({target_ver}): "
+        f"{res['byte_matches']}/{res['files_total']} files 100% SHA-256 match, "
+        f"{res['xml_matches']}/{res['xml_total']} XMLs 100% semantic match"
+    )
     _MATERIALIZED_DIRS[target_ver] = out_dir
     return out_dir
 
 
 def verify_all_versions_against_static():
     """
-    Runs a full cross-check of all 9 Android versions (`9.0.0`..`16.0.0`) + `common`
-    comparing `res/` + `patch/v*.py` against `static/`.
+    Runs a strict verification of all 9 Android versions (`9.0.0`..`16.0.0`) + `common`
+    comparing `res/` + `patch/v*.py` against `patch/expected_manifest.json`.
+    Raises RuntimeError and exits non-zero if any check fails.
     """
     print("=" * 85)
-    print("🔍 CROSS-CHECKING res/ + patch/ AGAINST static/ ACROSS ALL ANDROID VERSIONS")
+    print("🔍 STRICT VERIFICATION: res/ + patch/ AGAINST EXPECTED SHA-256 & XML SEMANTIC MANIFEST")
     print("=" * 85)
     total_files = 0
     total_xmls = 0
@@ -220,27 +277,12 @@ def verify_all_versions_against_static():
                 f"| XML Semantics: {res['xml_matches']:2d}/{res['xml_total']:2d} (100%)"
             )
 
-    common_files = [
-        "sign/testkey.pk8",
-        "sign/testkey.x509.pem",
-        "toybox/toybox-arm",
-        "toybox/toybox-arm64",
-        "toybox/toybox-x86",
-        "toybox/toybox-x86_64",
-    ]
-    for sub in common_files:
-        orig_f = Path(STATIC_ROOT) / "common" / sub
-        res_f = Path(RES_ROOT) / sub
-        if not res_f.is_file():
-            raise AssertionError(f"Missing res/{sub}")
-        if hashlib.sha256(orig_f.read_bytes()).digest() != hashlib.sha256(res_f.read_bytes()).digest():
-            raise AssertionError(f"SHA-256 mismatch in res/{sub} vs static/common/{sub}")
-        total_files += 1
-
+    common_res = verify_common_assets()
+    total_files += common_res["files_total"]
     print(
-        f"  [PASS] Common Assets  | Files:  {len(common_files)}/ {len(common_files)} (100% Path) "
-        f"| Bytes:  {len(common_files)}/ {len(common_files)} (100% SHA-256)"
+        f"  [PASS] Common Assets  | Files:  {common_res['files_total']}/ {common_res['files_total']} (100% Path) "
+        f"| Bytes:  {common_res['byte_matches']}/ {common_res['files_total']} (100% SHA-256)"
     )
     print("-" * 85)
-    print(f"✅ VERIFIED: {total_files}/284 files & {total_xmls}/{total_xmls} XMLs match 100% in Path, Bytes, and XML Semantics!")
+    print(f"✅ STRICT VERIFICATION PASSED: {total_files}/284 files & {total_xmls}/{total_xmls} XMLs match 100%!")
     print("=" * 85)

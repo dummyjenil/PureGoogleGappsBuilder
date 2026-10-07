@@ -1,3 +1,0 @@
--priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk;PRESIGNED|490ad9c4c40d81159d7b56499acc8bdcc0d195af
-lib/libjni_latinimegoogle.so|2eba28b0bc56c44aa89749cb4e2423068b9fcd4e
-lib64/libjni_latinimegoogle.so|84f9b1dc4c1b45f0c5ec9043b99a50c54e58ae1d

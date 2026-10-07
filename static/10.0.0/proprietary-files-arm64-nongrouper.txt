@@ -1,4 +1,0 @@
--app/MarkupGoogle/MarkupGoogle.apk;PRESIGNED|012bf4c0622d9d0aa4361a62e7ce07a1eb056b8f
--priv-app/SetupWizardPrebuilt/SetupWizardPrebuilt.apk;PRESIGNED|d7756e156c070b0acabe76c0df74229d5a25ab29
--priv-app/Velvet/Velvet.apk;PRESIGNED|314043242c4253b61d9d4fcf656489d3fa0265be
-app/MarkupGoogle/lib/arm64/libsketchology_native.so|71898873b8d07af8f0589ac6faf64770300b2e21

@@ -1,0 +1,1392 @@
+{
+  "10.0.0": {
+    "arm/proprietary/app/MarkupGoogle/lib/arm/libsketchology_native.so": {
+      "sha256": "a4168da8391328b658a52ce47ee976b13821679a9ad699b3c02eb42a3fada1fc",
+      "size": 1429724
+    },
+    "arm/proprietary/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/app/MarkupGoogle/lib/arm64/libsketchology_native.so": {
+      "sha256": "116fe4498078d2e099197f82631baedb60436ef72aea215626cb52e7bd9181dd",
+      "size": 2019184
+    },
+    "arm64/proprietary/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/lib64/libjni_latinimegoogle.so": {
+      "sha256": "b1049983e6ac5cfc6d1c66e38959751044fad213dff0637a6cf1d2a2703e754f",
+      "size": 1112352
+    },
+    "common/proprietary/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "42c0ad27676d0b7d21150d6586672b2567ac272f5f24657110914b090631bdb7",
+      "size": 564,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/etc/permissions/com.google.android.maps.xml": {
+      "sha256": "96eb882252cc5cc4bfc9e1a6e2134689250d6b54865c9c6121bd6fc575882349",
+      "size": 813,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "538e2c483d99a913f8f7c7a6207d36dd77a3d018c64fd6911c93bec4ffac4627"
+    },
+    "common/proprietary/etc/permissions/privapp-permissions-google-p.xml": {
+      "sha256": "cb7b620940596a5de995a68a482ae672c6d26f1b6fd254af8ab155d235d9ae5b",
+      "size": 16810,
+      "xml_elem_count": 216,
+      "xml_semantic_sha256": "164c15b0ae7064f960022e249939c21e12dd836c4beded7fbd51e64b9d2fb8c0"
+    },
+    "common/proprietary/etc/permissions/privapp-permissions-google-ps.xml": {
+      "sha256": "94599c3ffa33eec5a28a2339cf853a11829ff6dce403e51a9a2466d856f3ed64",
+      "size": 18785,
+      "xml_elem_count": 252,
+      "xml_semantic_sha256": "d84917c8eed0a285adf0ae1c036809ca8313f38da81d13e04a467f9c1fda9678"
+    },
+    "common/proprietary/etc/permissions/privapp-permissions-google.xml": {
+      "sha256": "7af6d786535388508903692cbc8d0f79448b586c7c14b95c0b0c42272b45b1ea",
+      "size": 4291,
+      "xml_elem_count": 45,
+      "xml_semantic_sha256": "58bc12faebbb6a99629ed1af1f0eaaa5d9473d1ee5e41179e2192ca2e7140858"
+    },
+    "common/proprietary/etc/sysconfig/google-hiddenapi-package-whitelist.xml": {
+      "sha256": "abdc7096078ef839f3b2af50480c0f686ad753838aaa69fe6c6e968c76a8726f",
+      "size": 7652,
+      "xml_elem_count": 93,
+      "xml_semantic_sha256": "60dfdfa2b89827dd5086df370e141ba6eecc6c92281bf6c5726afa9f0177115a"
+    },
+    "common/proprietary/etc/sysconfig/google.xml": {
+      "sha256": "cbf98bd0a8482b845c72ae66c296f38908db19aaa79128dff90e9cef7113e4a3",
+      "size": 6085,
+      "xml_elem_count": 47,
+      "xml_semantic_sha256": "6190aefe4aeef765282dbc8e06d573bb3c5125b36396cecdd7b79cd3b026a6a6"
+    },
+    "common/proprietary/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/framework/com.google.android.dialer.support.jar": {
+      "sha256": "3740e4e56dd8a5cc50d3bc65149e4100abc21441eda2fe585e04be9d5a0dede5",
+      "size": 854
+    },
+    "common/proprietary/framework/com.google.android.maps.jar": {
+      "sha256": "c2a794cc475efbe640290d501d52a2958f451daffaa45a3fdd74d6fee97f6f69",
+      "size": 323685
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "52de74efbd88b33423a5f3fafb358fa1e5060b3fe0758ec408e756f61b94b707",
+      "size": 361
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "d75a94ae92a22503e07a97ad848ea87b0cade3caeb8b2e5023f47aaa531cdfd6",
+      "size": 167
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "b185c576f7c65a10a15f82b42e43cc831281b590f3e6b7fdcf4deb3d6cede62f",
+      "size": 363
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "1bab4a7efa18926fde323fd444bd5571b5fc0b2582d543df7f0e43daf0f4d654",
+      "size": 239
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "236a8f37b86dcb3c7600d8ff70fd5b42a0928e9cccf9496913c31798e1bff9b1",
+      "size": 111
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "6c168c946010c8336d9a4924ca0484fcfc7e0e44793f3202428a1de192e944bc",
+      "size": 986
+    },
+    "proprietary-files-x86-nongrouper.txt": {
+      "sha256": "3da4e0ced4d54e9d2b2fad2899ebee4543a624ff890b54a750d2a559978c383c",
+      "size": 184
+    },
+    "proprietary-files-x86.txt": {
+      "sha256": "0c5ddefdc9ae29f13f64eb8dec72bed60f3451d23bbea7b9bb2fd349912b7655",
+      "size": 167
+    },
+    "update-binary": {
+      "sha256": "f74e3d0ecdfedb220a8485b66d29cd5fdb645466bc9c2e0148d5081eadc6dbd1",
+      "size": 6330
+    },
+    "x86/proprietary/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    }
+  },
+  "11.0.0": {
+    "arm/proprietary/product/app/MarkupGoogle/lib/arm/libsketchology_native.so": {
+      "sha256": "a4168da8391328b658a52ce47ee976b13821679a9ad699b3c02eb42a3fada1fc",
+      "size": 1429724
+    },
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/app/MarkupGoogle/lib/arm64/libsketchology_native.so": {
+      "sha256": "116fe4498078d2e099197f82631baedb60436ef72aea215626cb52e7bd9181dd",
+      "size": 2019184
+    },
+    "arm64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "b1049983e6ac5cfc6d1c66e38959751044fad213dff0637a6cf1d2a2703e754f",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "42c0ad27676d0b7d21150d6586672b2567ac272f5f24657110914b090631bdb7",
+      "size": 564,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-p.xml": {
+      "sha256": "1d06370c2d94d519907b87c13e42789131e9a0a811a8b53fe60439062238d541",
+      "size": 30390,
+      "xml_elem_count": 406,
+      "xml_semantic_sha256": "d706a87d6db890db1b59d0752ba265115a9ea4d41442965782f99ce6dbef687e"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-whitelist.xml": {
+      "sha256": "8be877d7f55f1ef7a650290e99f6bbeeab25ae2573c4604280c7f2b6d286d516",
+      "size": 7565,
+      "xml_elem_count": 92,
+      "xml_semantic_sha256": "6ce88027f72559506b5eafa4168cf3aee6bff5a4c047086e98e0caa5d0562302"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "95616cfe00726b60759be00a6491e2b5186da02bb0e384e6682bef61428d2709",
+      "size": 6685,
+      "xml_elem_count": 51,
+      "xml_semantic_sha256": "f68ec53664a0eb87145c1f09211df81af534d86e71fc2bf8d7364aa222553077"
+    },
+    "common/proprietary/product/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "537b24175102ed5ed878398babf39894c047483cb6c1754dcf7155eade3decfe",
+      "size": 874
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-se.xml": {
+      "sha256": "4e2161961b9750773d4b9239ec1b4c5197c8131f6f51a18496aef72389dbbd8c",
+      "size": 10611,
+      "xml_elem_count": 132,
+      "xml_semantic_sha256": "19e49987207af24f02bb992d909b8da8824e2ba6721e9c107ac05d4463f6dc12"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "c4ed4aee72a53e38992cc084941a25d953bd01b121752355bbae59626d795e32",
+      "size": 567
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "64d24848ba8731db067f76271f8940bb21a51d2b2f7bb13769ffd805a883a67e",
+      "size": 183
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "2b824e1d6d44e732ef65667b6fd8a301a38ce79ff86e13a504e2438763057fbe",
+      "size": 569
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "89075142c2c4b317ff40c824455fba3ab7d2871939ade8dad96ab66b0e31f3e5",
+      "size": 263
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "09964f9137f701628ec56384c3fabd0eb1c8a70dd3d391438864f952d9acf087",
+      "size": 119
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "d197ab7a739e13b1c7a18470604869c79f915333e64efcf2009c2a8fd9937824",
+      "size": 1094
+    },
+    "proprietary-files-x86-nongrouper.txt": {
+      "sha256": "b522b7fbcc49846a7850be896aa758d15370498e45a0032d15c85dd8b00ebc38",
+      "size": 200
+    },
+    "proprietary-files-x86.txt": {
+      "sha256": "67c5f300e16e47f15b20ffceaa77c1f7ff5c9f5ebb2869001e28f20ddadf5465",
+      "size": 183
+    },
+    "update-binary": {
+      "sha256": "26fb0f201a625cac4c6acd25686ec6eb72a90cc032524e839e8aa5db9219cd38",
+      "size": 8791
+    },
+    "x86/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    }
+  },
+  "12.0.0": {
+    "arm/proprietary/product/app/MarkupGoogle/lib/arm/libsketchology_native.so": {
+      "sha256": "a4168da8391328b658a52ce47ee976b13821679a9ad699b3c02eb42a3fada1fc",
+      "size": 1429724
+    },
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/app/MarkupGoogle/lib/arm64/libsketchology_native.so": {
+      "sha256": "116fe4498078d2e099197f82631baedb60436ef72aea215626cb52e7bd9181dd",
+      "size": 2019184
+    },
+    "arm64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "b1049983e6ac5cfc6d1c66e38959751044fad213dff0637a6cf1d2a2703e754f",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-google.xml": {
+      "sha256": "60a4470e3802f1ce8c414fddca43b81bec20c408376a736f04d1d294d72dc7c8",
+      "size": 1488,
+      "xml_elem_count": 13,
+      "xml_semantic_sha256": "031bb6a3c1c5952a8161d4601becc882ea5b39da4805c2f7de15a277d8dc57ec"
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-mtg.xml": {
+      "sha256": "8f269a3fbb7baf12c65818dab12cad2e50cbfeb8c7d36da5f8257f7d71f7c67e",
+      "size": 1375,
+      "xml_elem_count": 16,
+      "xml_semantic_sha256": "b98f063ded92c9fed21057fae40fff2a1b9030f750ed89d8eec065e4643713da"
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "b3b530828259e81adffbd78cd64735afe65849f78dc2bb09b62e14b8ddef3244",
+      "size": 610,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-product.xml": {
+      "sha256": "61bb1c9c1d11421838df7c4e9dd54268d13ec11a4baa508475e17a60ecd356d9",
+      "size": 20560,
+      "xml_elem_count": 284,
+      "xml_semantic_sha256": "96b2cd7153f9bc2ee56cabbc2396473cafc2b8e4517ce06c4075fe53759a238c"
+    },
+    "common/proprietary/product/etc/security/fsverity/gms_fsverity_cert.der": {
+      "sha256": "1a78f5d70b87441c7d13384179e377f4f3105be25814eef05cd95d1b736775b9",
+      "size": 1484
+    },
+    "common/proprietary/product/etc/sysconfig/d2d_cable_migration_feature.xml": {
+      "sha256": "364372d5bb87bbf22b2628b14e2b56d521fb17ce27df804713c6fbea2eb2088c",
+      "size": 136,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "69ae912dfb2b6f14126ae697c0d033849feba06b301c3b433374565b1dd7191a"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml": {
+      "sha256": "47612877a9484d9426a9964843016f0da34153f7f1446fbabcfba7e469790cd1",
+      "size": 4259,
+      "xml_elem_count": 57,
+      "xml_semantic_sha256": "81e7965f955cb9c52073469962ccdac8a228f6a49952e75daa6b7bd344f21607"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "8519d55d9557743f5f089ed9be11da357b8e7fa1f9f59db58f19287e75b080fb",
+      "size": 3960,
+      "xml_elem_count": 34,
+      "xml_semantic_sha256": "b0dbffff71d919d6fff2c10c8c5521f0fef4e05ca3f8e16640426f83f5691827"
+    },
+    "common/proprietary/product/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "584859f94fe2dd0c4aec65f514a990b6f4fc8290bfd7565e2fe036d761aee89e",
+      "size": 946
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml": {
+      "sha256": "b60425682f05ec57d6344ed72d25bfa69238cdf9050308f85eb91a076286a3a0",
+      "size": 3975,
+      "xml_elem_count": 56,
+      "xml_semantic_sha256": "7fa932d52f02da96e8b1fe69e6c56c74cac752c9efb5a5d17c31a7bdc93a6659"
+    },
+    "overlay/GmsOverlay/AndroidManifest.xml": {
+      "sha256": "1c8421d3516144c5e9ac473dbd6aba903aa465928d47c8c2942b7196e962e074",
+      "size": 269,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "4bbe17a8f183f6f6279a13a426dde547eb9a92307af0578d04f8d9b29205d434"
+    },
+    "overlay/GmsOverlay/res/values/config.xml": {
+      "sha256": "26ee3c6e7e56d5574e4f33fe56639444fa8c349cab98b623e6fbdee93961fd46",
+      "size": 3131,
+      "xml_elem_count": 23,
+      "xml_semantic_sha256": "486da40359036c3ef4669d23f8bf67f096ef7cc0c5aff94ce6bc3e9ebb25c498"
+    },
+    "overlay/GmsSettingsProviderOverlay/AndroidManifest.xml": {
+      "sha256": "4a97e11c8654a65e8cb34650f91b7f6c696ca22cfa979418f8d719f26a47c2f8",
+      "size": 308,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "2f88f8b6fed7e94a34dc7d498b05e9e04d73f5dbe8112867cc964e234ad99588"
+    },
+    "overlay/GmsSettingsProviderOverlay/res/values/defaults.xml": {
+      "sha256": "5220d0cb854464903d8ca0e95f9aac956bd081e4871e4f0510c45175d9abcbc3",
+      "size": 128,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3962fdb9d7abd9d02644ef9e01bcecd292e1eafa18e748cc7d36ace5944d488b"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "db36a7fb0086cfb1a94fad998964764b89fbbe43e1c19c8e22d116399c2e881a",
+      "size": 437
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "e1baaec930e6b9644b72e542f0fef51f0b5d4877bc6c3caa5556de21803df415",
+      "size": 176
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "7684ed6b76e1c9c0651c37d655a6be789d67e792815e8e73ddc1afee5feec752",
+      "size": 439
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "1b2a9004c1177caf4602350932962eda722918fa09703fed777bab5adda831db",
+      "size": 256
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "e50ae99afc7318d33ca54fe7eae83cad4b6b9a468a40a42532761e156541d913",
+      "size": 60
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "72201fab078a19d822cc2c9d9d7092c6a312895439516aa7d072b48229c558e1",
+      "size": 1329
+    },
+    "proprietary-files-x86-nongrouper.txt": {
+      "sha256": "ea50145640579b42a9f21b42f42137bd3540fde68eb0336b5d0bdff60c9d3426",
+      "size": 126
+    },
+    "proprietary-files-x86.txt": {
+      "sha256": "7904a3129b927c0e7847de5a4aa76a85434d103b0265d42ba1811658e505c979",
+      "size": 176
+    },
+    "proprietary-files-x86_64-nongrouper.txt": {
+      "sha256": "ea50145640579b42a9f21b42f42137bd3540fde68eb0336b5d0bdff60c9d3426",
+      "size": 126
+    },
+    "proprietary-files-x86_64.txt": {
+      "sha256": "9fb46012e1ff1dbde2845d47301a967761e8547583633a70e022f8b58466ecfc",
+      "size": 256
+    },
+    "update-binary": {
+      "sha256": "16a09b7d2c3911039b740dabf5f19e27851918ea4d748e8349524021dd89f254",
+      "size": 8896
+    },
+    "x86/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "bd946d126c957b5a6dea3bafa07fa36a27950b30e2b684dffc60746d0a1c7ad8",
+      "size": 948864
+    }
+  },
+  "12.1.0": {
+    "arm/proprietary/product/app/MarkupGoogle/lib/arm/libsketchology_native.so": {
+      "sha256": "a4168da8391328b658a52ce47ee976b13821679a9ad699b3c02eb42a3fada1fc",
+      "size": 1429724
+    },
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/app/MarkupGoogle/lib/arm64/libsketchology_native.so": {
+      "sha256": "116fe4498078d2e099197f82631baedb60436ef72aea215626cb52e7bd9181dd",
+      "size": 2019184
+    },
+    "arm64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "b1049983e6ac5cfc6d1c66e38959751044fad213dff0637a6cf1d2a2703e754f",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-google.xml": {
+      "sha256": "60a4470e3802f1ce8c414fddca43b81bec20c408376a736f04d1d294d72dc7c8",
+      "size": 1488,
+      "xml_elem_count": 13,
+      "xml_semantic_sha256": "031bb6a3c1c5952a8161d4601becc882ea5b39da4805c2f7de15a277d8dc57ec"
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-mtg.xml": {
+      "sha256": "8f269a3fbb7baf12c65818dab12cad2e50cbfeb8c7d36da5f8257f7d71f7c67e",
+      "size": 1375,
+      "xml_elem_count": 16,
+      "xml_semantic_sha256": "b98f063ded92c9fed21057fae40fff2a1b9030f750ed89d8eec065e4643713da"
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "b3b530828259e81adffbd78cd64735afe65849f78dc2bb09b62e14b8ddef3244",
+      "size": 610,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-product.xml": {
+      "sha256": "61bb1c9c1d11421838df7c4e9dd54268d13ec11a4baa508475e17a60ecd356d9",
+      "size": 20560,
+      "xml_elem_count": 284,
+      "xml_semantic_sha256": "96b2cd7153f9bc2ee56cabbc2396473cafc2b8e4517ce06c4075fe53759a238c"
+    },
+    "common/proprietary/product/etc/security/fsverity/gms_fsverity_cert.der": {
+      "sha256": "1a78f5d70b87441c7d13384179e377f4f3105be25814eef05cd95d1b736775b9",
+      "size": 1484
+    },
+    "common/proprietary/product/etc/sysconfig/d2d_cable_migration_feature.xml": {
+      "sha256": "364372d5bb87bbf22b2628b14e2b56d521fb17ce27df804713c6fbea2eb2088c",
+      "size": 136,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "69ae912dfb2b6f14126ae697c0d033849feba06b301c3b433374565b1dd7191a"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml": {
+      "sha256": "47612877a9484d9426a9964843016f0da34153f7f1446fbabcfba7e469790cd1",
+      "size": 4259,
+      "xml_elem_count": 57,
+      "xml_semantic_sha256": "81e7965f955cb9c52073469962ccdac8a228f6a49952e75daa6b7bd344f21607"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "8519d55d9557743f5f089ed9be11da357b8e7fa1f9f59db58f19287e75b080fb",
+      "size": 3960,
+      "xml_elem_count": 34,
+      "xml_semantic_sha256": "b0dbffff71d919d6fff2c10c8c5521f0fef4e05ca3f8e16640426f83f5691827"
+    },
+    "common/proprietary/product/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "584859f94fe2dd0c4aec65f514a990b6f4fc8290bfd7565e2fe036d761aee89e",
+      "size": 946
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml": {
+      "sha256": "b60425682f05ec57d6344ed72d25bfa69238cdf9050308f85eb91a076286a3a0",
+      "size": 3975,
+      "xml_elem_count": 56,
+      "xml_semantic_sha256": "7fa932d52f02da96e8b1fe69e6c56c74cac752c9efb5a5d17c31a7bdc93a6659"
+    },
+    "overlay/GmsOverlay/AndroidManifest.xml": {
+      "sha256": "1c8421d3516144c5e9ac473dbd6aba903aa465928d47c8c2942b7196e962e074",
+      "size": 269,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "4bbe17a8f183f6f6279a13a426dde547eb9a92307af0578d04f8d9b29205d434"
+    },
+    "overlay/GmsOverlay/res/values/config.xml": {
+      "sha256": "26ee3c6e7e56d5574e4f33fe56639444fa8c349cab98b623e6fbdee93961fd46",
+      "size": 3131,
+      "xml_elem_count": 23,
+      "xml_semantic_sha256": "486da40359036c3ef4669d23f8bf67f096ef7cc0c5aff94ce6bc3e9ebb25c498"
+    },
+    "overlay/GmsSettingsProviderOverlay/AndroidManifest.xml": {
+      "sha256": "4a97e11c8654a65e8cb34650f91b7f6c696ca22cfa979418f8d719f26a47c2f8",
+      "size": 308,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "2f88f8b6fed7e94a34dc7d498b05e9e04d73f5dbe8112867cc964e234ad99588"
+    },
+    "overlay/GmsSettingsProviderOverlay/res/values/defaults.xml": {
+      "sha256": "5220d0cb854464903d8ca0e95f9aac956bd081e4871e4f0510c45175d9abcbc3",
+      "size": 128,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3962fdb9d7abd9d02644ef9e01bcecd292e1eafa18e748cc7d36ace5944d488b"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "db36a7fb0086cfb1a94fad998964764b89fbbe43e1c19c8e22d116399c2e881a",
+      "size": 437
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "e1baaec930e6b9644b72e542f0fef51f0b5d4877bc6c3caa5556de21803df415",
+      "size": 176
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "7684ed6b76e1c9c0651c37d655a6be789d67e792815e8e73ddc1afee5feec752",
+      "size": 439
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "1b2a9004c1177caf4602350932962eda722918fa09703fed777bab5adda831db",
+      "size": 256
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "e50ae99afc7318d33ca54fe7eae83cad4b6b9a468a40a42532761e156541d913",
+      "size": 60
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "72201fab078a19d822cc2c9d9d7092c6a312895439516aa7d072b48229c558e1",
+      "size": 1329
+    },
+    "proprietary-files-x86-nongrouper.txt": {
+      "sha256": "ea50145640579b42a9f21b42f42137bd3540fde68eb0336b5d0bdff60c9d3426",
+      "size": 126
+    },
+    "proprietary-files-x86.txt": {
+      "sha256": "7904a3129b927c0e7847de5a4aa76a85434d103b0265d42ba1811658e505c979",
+      "size": 176
+    },
+    "proprietary-files-x86_64-nongrouper.txt": {
+      "sha256": "ea50145640579b42a9f21b42f42137bd3540fde68eb0336b5d0bdff60c9d3426",
+      "size": 126
+    },
+    "proprietary-files-x86_64.txt": {
+      "sha256": "9fb46012e1ff1dbde2845d47301a967761e8547583633a70e022f8b58466ecfc",
+      "size": 256
+    },
+    "update-binary": {
+      "sha256": "16a09b7d2c3911039b740dabf5f19e27851918ea4d748e8349524021dd89f254",
+      "size": 8896
+    },
+    "x86/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "bd946d126c957b5a6dea3bafa07fa36a27950b30e2b684dffc60746d0a1c7ad8",
+      "size": 948864
+    }
+  },
+  "13.0.0": {
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "b1049983e6ac5cfc6d1c66e38959751044fad213dff0637a6cf1d2a2703e754f",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-google.xml": {
+      "sha256": "3cdec8685f7d5e9dd368a82d3814ea0a2f437606362ba79bf932dd68d11f98ee",
+      "size": 2057,
+      "xml_elem_count": 18,
+      "xml_semantic_sha256": "fe92ad81d4ae5b527b6ca10c06d4878dec16e2c5134e4254a8ea2c61d23f54bb"
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-mtg.xml": {
+      "sha256": "8f269a3fbb7baf12c65818dab12cad2e50cbfeb8c7d36da5f8257f7d71f7c67e",
+      "size": 1375,
+      "xml_elem_count": 16,
+      "xml_semantic_sha256": "b98f063ded92c9fed21057fae40fff2a1b9030f750ed89d8eec065e4643713da"
+    },
+    "common/proprietary/product/etc/init/gapps.rc": {
+      "sha256": "ad94604ab649064a0ec2e8569a22353c1d8235171fecabd74841a5188e74e407",
+      "size": 55
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "b3b530828259e81adffbd78cd64735afe65849f78dc2bb09b62e14b8ddef3244",
+      "size": 610,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-product.xml": {
+      "sha256": "7b0cb5608a5ac9dd3d1e3649f4bc0783c166e2ac003a5c660dde62b9bb274394",
+      "size": 25198,
+      "xml_elem_count": 349,
+      "xml_semantic_sha256": "be05325712c6221a0f938dbc7798d2cb3992071cd8621f1e81ee55602682c964"
+    },
+    "common/proprietary/product/etc/security/fsverity/gms_fsverity_cert.der": {
+      "sha256": "1a78f5d70b87441c7d13384179e377f4f3105be25814eef05cd95d1b736775b9",
+      "size": 1484
+    },
+    "common/proprietary/product/etc/sysconfig/d2d_cable_migration_feature.xml": {
+      "sha256": "364372d5bb87bbf22b2628b14e2b56d521fb17ce27df804713c6fbea2eb2088c",
+      "size": 136,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "69ae912dfb2b6f14126ae697c0d033849feba06b301c3b433374565b1dd7191a"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml": {
+      "sha256": "47612877a9484d9426a9964843016f0da34153f7f1446fbabcfba7e469790cd1",
+      "size": 4259,
+      "xml_elem_count": 57,
+      "xml_semantic_sha256": "81e7965f955cb9c52073469962ccdac8a228f6a49952e75daa6b7bd344f21607"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "a4193b87d559ed461a4c4f1cb2e4a5912d93b1f47fcf63e34a5e19f841897a4c",
+      "size": 4885,
+      "xml_elem_count": 43,
+      "xml_semantic_sha256": "ae6506f0e228211637611648a915700d29cf05779aeabb86326bcd4e944c0fb9"
+    },
+    "common/proprietary/product/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "584859f94fe2dd0c4aec65f514a990b6f4fc8290bfd7565e2fe036d761aee89e",
+      "size": 946
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml": {
+      "sha256": "0e5c52fa65d4574c596c20bed41abb89f106750d39f9015f212214ea36390c9c",
+      "size": 4497,
+      "xml_elem_count": 63,
+      "xml_semantic_sha256": "2f282eb6686d1af328dd4363c3d6894ea90c7d36061df95f2b6c47a7d8b1f26d"
+    },
+    "overlay/GmsOverlay/AndroidManifest.xml": {
+      "sha256": "a9aecfb0bd737c069290e19644562e28dc0efc5b16c47697aab53bb975c78a64",
+      "size": 313,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "54120926f80f3869e11f2d28d844fa537761b553ccd1bc1110786f69fc35da4d"
+    },
+    "overlay/GmsOverlay/res/values/config.xml": {
+      "sha256": "2db56397a699438c32dde7f1b6677020833641910e99645f31c12743b990f224",
+      "size": 4819,
+      "xml_elem_count": 31,
+      "xml_semantic_sha256": "0fdb3243cfb3d2da7aa752ce7f9866fe2cb58d328203b95fd498f445e0d4bf05"
+    },
+    "overlay/GmsSettingsProviderOverlay/AndroidManifest.xml": {
+      "sha256": "7acb6e32e5928bf585988b438bb8a8e873073acd01d1273e061a544dfe4b2723",
+      "size": 352,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "6182824bb0d7306d980801faf70ce7ea6bed7621100593baa69cbe253310915b"
+    },
+    "overlay/GmsSettingsProviderOverlay/res/values/defaults.xml": {
+      "sha256": "5220d0cb854464903d8ca0e95f9aac956bd081e4871e4f0510c45175d9abcbc3",
+      "size": 128,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3962fdb9d7abd9d02644ef9e01bcecd292e1eafa18e748cc7d36ace5944d488b"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "7e1b1a0399beefaf7310b9479c011a59b317b7cae6ad453f268944592a8e7182",
+      "size": 244
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "e1baaec930e6b9644b72e542f0fef51f0b5d4877bc6c3caa5556de21803df415",
+      "size": 176
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "2c8681c53adfb462416f397cb3c4f3531b25034e8ddb56d3134a7331b2275897",
+      "size": 452
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "1b2a9004c1177caf4602350932962eda722918fa09703fed777bab5adda831db",
+      "size": 256
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "e50ae99afc7318d33ca54fe7eae83cad4b6b9a468a40a42532761e156541d913",
+      "size": 60
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "fc9618959eac344f87551cc91bba0c0007e6675a9e754dae5483a20f925da5a4",
+      "size": 1438
+    },
+    "proprietary-files-x86-nongrouper.txt": {
+      "sha256": "ea50145640579b42a9f21b42f42137bd3540fde68eb0336b5d0bdff60c9d3426",
+      "size": 126
+    },
+    "proprietary-files-x86.txt": {
+      "sha256": "7904a3129b927c0e7847de5a4aa76a85434d103b0265d42ba1811658e505c979",
+      "size": 176
+    },
+    "proprietary-files-x86_64-nongrouper.txt": {
+      "sha256": "ea50145640579b42a9f21b42f42137bd3540fde68eb0336b5d0bdff60c9d3426",
+      "size": 126
+    },
+    "proprietary-files-x86_64.txt": {
+      "sha256": "9fb46012e1ff1dbde2845d47301a967761e8547583633a70e022f8b58466ecfc",
+      "size": 256
+    },
+    "update-binary": {
+      "sha256": "affb0f792e0bcb286d70ef771f1c1d41479a232169130aec1cf5fcc91b815bb7",
+      "size": 9054
+    },
+    "x86/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "bd946d126c957b5a6dea3bafa07fa36a27950b30e2b684dffc60746d0a1c7ad8",
+      "size": 948864
+    }
+  },
+  "14.0.0": {
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "2167b5aec28fb7a14f704becc2dfff3b719c84d2601b063e69eb01fedc0c185c",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "2167b5aec28fb7a14f704becc2dfff3b719c84d2601b063e69eb01fedc0c185c",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "41a39a7410dfe3e90d530aeca84cb4dfbe2c2e411ca7470cb32e93625a5f33e0",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-google.xml": {
+      "sha256": "c459a4f1ea11cd493c0a550cb428f19f41f30800807c395d4d32391ec3f112f4",
+      "size": 2133,
+      "xml_elem_count": 19,
+      "xml_semantic_sha256": "ba090ff45b2035848f4afce11596fef2f3245da138ca83ec325698432e5a506b"
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-mtg.xml": {
+      "sha256": "8f269a3fbb7baf12c65818dab12cad2e50cbfeb8c7d36da5f8257f7d71f7c67e",
+      "size": 1375,
+      "xml_elem_count": 16,
+      "xml_semantic_sha256": "b98f063ded92c9fed21057fae40fff2a1b9030f750ed89d8eec065e4643713da"
+    },
+    "common/proprietary/product/etc/init/gapps.rc": {
+      "sha256": "d11421659a4003f1b1939e41f132c3d950251b2da372d95e63f99523f5218121",
+      "size": 95
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "b3b530828259e81adffbd78cd64735afe65849f78dc2bb09b62e14b8ddef3244",
+      "size": 610,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-product.xml": {
+      "sha256": "af730bf23ca2408fd642d64b5ca8a846b1d31c9a348368e6df26e91905b7bc11",
+      "size": 25782,
+      "xml_elem_count": 351,
+      "xml_semantic_sha256": "17db47127e9dd802cc001d4c58289c0392d239c42b2adfa37f5ac4cad29ca313"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-mtg.xml": {
+      "sha256": "ba124a28fed8760be03259311766556e29ac5ac766842362c571bf029071d356",
+      "size": 362,
+      "xml_elem_count": 5,
+      "xml_semantic_sha256": "99a3b6253cd731521bd0f1b93b9fb6e8dd289be8367e86936479d474a0af424f"
+    },
+    "common/proprietary/product/etc/security/fsverity/gms_fsverity_cert.der": {
+      "sha256": "1a78f5d70b87441c7d13384179e377f4f3105be25814eef05cd95d1b736775b9",
+      "size": 1484
+    },
+    "common/proprietary/product/etc/sysconfig/d2d_cable_migration_feature.xml": {
+      "sha256": "364372d5bb87bbf22b2628b14e2b56d521fb17ce27df804713c6fbea2eb2088c",
+      "size": 136,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "69ae912dfb2b6f14126ae697c0d033849feba06b301c3b433374565b1dd7191a"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml": {
+      "sha256": "47612877a9484d9426a9964843016f0da34153f7f1446fbabcfba7e469790cd1",
+      "size": 4259,
+      "xml_elem_count": 57,
+      "xml_semantic_sha256": "81e7965f955cb9c52073469962ccdac8a228f6a49952e75daa6b7bd344f21607"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "edf812885b78966b74f121d13d1ef7120aeab2b51211182b709bfb3c93b91330",
+      "size": 6127,
+      "xml_elem_count": 50,
+      "xml_semantic_sha256": "3e870ea54768369f765a6530f415bd65c4dcd68b5b5dc480c3422a1b5adf3598"
+    },
+    "common/proprietary/product/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/product/etc/sysconfig/wellbeing.xml": {
+      "sha256": "eb737eb93ffa855638793cf898c9bb73dff81fa48fa0ecaf7707280a9f1b2753",
+      "size": 118,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3c4fe651e5568f30b5a335fd1ebbbeaf5a36d1badd78aa3892dda45f1341b709"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "584859f94fe2dd0c4aec65f514a990b6f4fc8290bfd7565e2fe036d761aee89e",
+      "size": 946
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml": {
+      "sha256": "5ad3816372042840de3b9953cb6582fa84e55416100afca4da93b0dcf470aadb",
+      "size": 4500,
+      "xml_elem_count": 62,
+      "xml_semantic_sha256": "5024ff612bf25a14c353d3d2951360f333aaf26bc3fb777d6c915f67901bc1c3"
+    },
+    "overlay/GmsOverlay/AndroidManifest.xml": {
+      "sha256": "a9aecfb0bd737c069290e19644562e28dc0efc5b16c47697aab53bb975c78a64",
+      "size": 313,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "54120926f80f3869e11f2d28d844fa537761b553ccd1bc1110786f69fc35da4d"
+    },
+    "overlay/GmsOverlay/res/values/config.xml": {
+      "sha256": "2db56397a699438c32dde7f1b6677020833641910e99645f31c12743b990f224",
+      "size": 4819,
+      "xml_elem_count": 31,
+      "xml_semantic_sha256": "0fdb3243cfb3d2da7aa752ce7f9866fe2cb58d328203b95fd498f445e0d4bf05"
+    },
+    "overlay/GmsSettingsOverlay/AndroidManifest.xml": {
+      "sha256": "d806e7c86147cf93a3e3a30da0dcbe6afdc0da9b63462d5bfb01e39573d993b7",
+      "size": 334,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "4216654e14f681d233945eb89980f640d2ba87351c2248d039eec6a2a630da09"
+    },
+    "overlay/GmsSettingsOverlay/res/values/config.xml": {
+      "sha256": "dfc457a9eff2f53cf38c788263c2738f0bf793ad60560f1b363bb42d486d6055",
+      "size": 1371,
+      "xml_elem_count": 5,
+      "xml_semantic_sha256": "4add5acac17101da21ee0674093a0919c52787bb2a48c09331b0ce01544d5b10"
+    },
+    "overlay/GmsSettingsProviderOverlay/AndroidManifest.xml": {
+      "sha256": "7acb6e32e5928bf585988b438bb8a8e873073acd01d1273e061a544dfe4b2723",
+      "size": 352,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "6182824bb0d7306d980801faf70ce7ea6bed7621100593baa69cbe253310915b"
+    },
+    "overlay/GmsSettingsProviderOverlay/res/values/defaults.xml": {
+      "sha256": "5220d0cb854464903d8ca0e95f9aac956bd081e4871e4f0510c45175d9abcbc3",
+      "size": 128,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3962fdb9d7abd9d02644ef9e01bcecd292e1eafa18e748cc7d36ace5944d488b"
+    },
+    "overlay/GmsSetupWizardOverlay/AndroidManifest.xml": {
+      "sha256": "55a9e61facbd1af346a0c904b5b7b332382a39bbc47f45214d63b97935c49355",
+      "size": 347,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "994a8e6a6f5144d3e06d5614dde58f56ec2a61814d56e5544deb05f4824f08fa"
+    },
+    "overlay/GmsSetupWizardOverlay/res/values/bools.xml": {
+      "sha256": "d2ec5d8f7121dc3b7b1ed1aabf7219412677e21871277cbf8f09682463e2f55e",
+      "size": 354,
+      "xml_elem_count": 6,
+      "xml_semantic_sha256": "895c9f099f079f42a2fb1aa45494277ebc05aac314f133386b729b427f9c6727"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "57d5585fe8a8a4a59cd93d726ec9da61bf4304b1d1e2a6f83fc058df18628dee",
+      "size": 240
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "bf47cb3e960f0da5c89fcaf713f357e0c55c27f354bced238cc4104ca799c07e",
+      "size": 174
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "83841b96bf0e44b9a5b069abdfcd6880b323f892704547f701b852718f441cf7",
+      "size": 446
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "2960742841476009f72801b756c3ab377673c263e211bb71df52bdb89c69bd93",
+      "size": 254
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "f3700f07aa10ca88998ad34267e6140c4404cb938992e6e5c0cb3183448e6c96",
+      "size": 147
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "ded5af637ccef58e134c0db1dc843a9213fb10273521a4de69240aea77bb4641",
+      "size": 1523
+    },
+    "proprietary-files-x86_64-nongrouper.txt": {
+      "sha256": "2599ff49ba2a6ab4855e7d77962a1feac06afa6ffdf386b729249939f3d4c0fb",
+      "size": 124
+    },
+    "proprietary-files-x86_64.txt": {
+      "sha256": "5f7dcd371ab27a3fc94ce65d30ff859e490461ea9e658457a2279643a71f6e12",
+      "size": 254
+    },
+    "update-binary": {
+      "sha256": "03feb34c4729f4fc9c01be73118a8a1e02b8dcadd79f8f12e36cdd7d9581252a",
+      "size": 9090
+    },
+    "x86_64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "97b1767838c2cfe1efbfb748d22ad20b56eca1a0ab1b7ab206f1af84ab5cdefe",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "9a238b2dd7a4aa9cf766d31201e6285bb3a203c3d73cfa0de2073bbd6014c8fd",
+      "size": 948864
+    }
+  },
+  "15.0.0": {
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "2167b5aec28fb7a14f704becc2dfff3b719c84d2601b063e69eb01fedc0c185c",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "2167b5aec28fb7a14f704becc2dfff3b719c84d2601b063e69eb01fedc0c185c",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "41a39a7410dfe3e90d530aeca84cb4dfbe2c2e411ca7470cb32e93625a5f33e0",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-google.xml": {
+      "sha256": "4513efc5d1e2efe0619d1b3551a6016813a02beb862c849ef6d6e26f7335ea9c",
+      "size": 3521,
+      "xml_elem_count": 32,
+      "xml_semantic_sha256": "56310529d70f66b11bbd09bef6b3383d9c17b134cafc853b58b158073b8bb9b5"
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-mtg.xml": {
+      "sha256": "250a22a5b0fd63140ae3842404d3ea85b5f390962d8350c96ff4b7ce4029a4f3",
+      "size": 1453,
+      "xml_elem_count": 17,
+      "xml_semantic_sha256": "0fc7466819ba1085ca0a12f0107793229b0dae48eb215cfc4fcdb2de4b51a2fb"
+    },
+    "common/proprietary/product/etc/init/gapps.rc": {
+      "sha256": "73fec552f7939e324162685ab5faa728d65e578ef3f68c8ce983973b42a6fa54",
+      "size": 95
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "b3b530828259e81adffbd78cd64735afe65849f78dc2bb09b62e14b8ddef3244",
+      "size": 610,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-product.xml": {
+      "sha256": "b0a0e5e41b67be5a91756aa5f08f8adb411b0a2867ab6e73407fd4a983612762",
+      "size": 28081,
+      "xml_elem_count": 382,
+      "xml_semantic_sha256": "d6bc487a84a4e3a425396cf17db44c28553aeffb2e90ccbe60ecfeffde189799"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-mtg.xml": {
+      "sha256": "9de7ae2a7ed6d643b6d556593a09bb9410cd8a9cb98fee99c85c66eb45f1ee03",
+      "size": 601,
+      "xml_elem_count": 8,
+      "xml_semantic_sha256": "2811e897f9b71a1a9de8a869582ab4525e2cfb0860af1ffabceddbee52f14ac8"
+    },
+    "common/proprietary/product/etc/security/fsverity/gms_fsverity_cert.der": {
+      "sha256": "1a78f5d70b87441c7d13384179e377f4f3105be25814eef05cd95d1b736775b9",
+      "size": 1484
+    },
+    "common/proprietary/product/etc/sysconfig/d2d_cable_migration_feature.xml": {
+      "sha256": "364372d5bb87bbf22b2628b14e2b56d521fb17ce27df804713c6fbea2eb2088c",
+      "size": 136,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "69ae912dfb2b6f14126ae697c0d033849feba06b301c3b433374565b1dd7191a"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml": {
+      "sha256": "47612877a9484d9426a9964843016f0da34153f7f1446fbabcfba7e469790cd1",
+      "size": 4259,
+      "xml_elem_count": 57,
+      "xml_semantic_sha256": "81e7965f955cb9c52073469962ccdac8a228f6a49952e75daa6b7bd344f21607"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "edf812885b78966b74f121d13d1ef7120aeab2b51211182b709bfb3c93b91330",
+      "size": 6127,
+      "xml_elem_count": 50,
+      "xml_semantic_sha256": "3e870ea54768369f765a6530f415bd65c4dcd68b5b5dc480c3422a1b5adf3598"
+    },
+    "common/proprietary/product/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/product/etc/sysconfig/wellbeing.xml": {
+      "sha256": "eb737eb93ffa855638793cf898c9bb73dff81fa48fa0ecaf7707280a9f1b2753",
+      "size": 118,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3c4fe651e5568f30b5a335fd1ebbbeaf5a36d1badd78aa3892dda45f1341b709"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "584859f94fe2dd0c4aec65f514a990b6f4fc8290bfd7565e2fe036d761aee89e",
+      "size": 946
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml": {
+      "sha256": "5ad3816372042840de3b9953cb6582fa84e55416100afca4da93b0dcf470aadb",
+      "size": 4500,
+      "xml_elem_count": 62,
+      "xml_semantic_sha256": "5024ff612bf25a14c353d3d2951360f333aaf26bc3fb777d6c915f67901bc1c3"
+    },
+    "overlay/GmsOverlay/AndroidManifest.xml": {
+      "sha256": "a9aecfb0bd737c069290e19644562e28dc0efc5b16c47697aab53bb975c78a64",
+      "size": 313,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "54120926f80f3869e11f2d28d844fa537761b553ccd1bc1110786f69fc35da4d"
+    },
+    "overlay/GmsOverlay/res/values/config.xml": {
+      "sha256": "540d25187c8c194cf66ece750b3f7eb3df4fb1ef97bae3cbc3f0dea6c858fcc0",
+      "size": 5923,
+      "xml_elem_count": 33,
+      "xml_semantic_sha256": "3e7403333985c249bacacad4152c43ff77f05a9e3127a1c346fd403e19fe58d6"
+    },
+    "overlay/GmsSettingsOverlay/AndroidManifest.xml": {
+      "sha256": "d806e7c86147cf93a3e3a30da0dcbe6afdc0da9b63462d5bfb01e39573d993b7",
+      "size": 334,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "4216654e14f681d233945eb89980f640d2ba87351c2248d039eec6a2a630da09"
+    },
+    "overlay/GmsSettingsOverlay/res/values/config.xml": {
+      "sha256": "cb3b61a8281d12ea0998dbafe44d3f21b8da36cad7997c3ed8a087be3b8cabcd",
+      "size": 1371,
+      "xml_elem_count": 5,
+      "xml_semantic_sha256": "4add5acac17101da21ee0674093a0919c52787bb2a48c09331b0ce01544d5b10"
+    },
+    "overlay/GmsSettingsProviderOverlay/AndroidManifest.xml": {
+      "sha256": "7acb6e32e5928bf585988b438bb8a8e873073acd01d1273e061a544dfe4b2723",
+      "size": 352,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "6182824bb0d7306d980801faf70ce7ea6bed7621100593baa69cbe253310915b"
+    },
+    "overlay/GmsSettingsProviderOverlay/res/values/defaults.xml": {
+      "sha256": "736633810b056bc319b70ac6054b91be65dba58bea6170e515c3d144898f97ea",
+      "size": 240,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "78e5c2a103258dcb512490d392417207bd8fd3a7213f9744694cd556aea812b3"
+    },
+    "overlay/GmsSetupWizardOverlay/AndroidManifest.xml": {
+      "sha256": "55a9e61facbd1af346a0c904b5b7b332382a39bbc47f45214d63b97935c49355",
+      "size": 347,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "994a8e6a6f5144d3e06d5614dde58f56ec2a61814d56e5544deb05f4824f08fa"
+    },
+    "overlay/GmsSetupWizardOverlay/res/values/bools.xml": {
+      "sha256": "d2ec5d8f7121dc3b7b1ed1aabf7219412677e21871277cbf8f09682463e2f55e",
+      "size": 354,
+      "xml_elem_count": 6,
+      "xml_semantic_sha256": "895c9f099f079f42a2fb1aa45494277ebc05aac314f133386b729b427f9c6727"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "57d5585fe8a8a4a59cd93d726ec9da61bf4304b1d1e2a6f83fc058df18628dee",
+      "size": 240
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "bf47cb3e960f0da5c89fcaf713f357e0c55c27f354bced238cc4104ca799c07e",
+      "size": 174
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "95dce209626f1889bbd4cbddfaf82f7e2cf8efcce8ed2787ff82bd00ed42fae8",
+      "size": 411
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "1035dcc99fa966cc1e53111eb4c4fc5c2f7d1fb7cca187ec9ae2057cb2e16a8d",
+      "size": 213
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "f3700f07aa10ca88998ad34267e6140c4404cb938992e6e5c0cb3183448e6c96",
+      "size": 147
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "dcb1b2f9943529f43cfe92672a97f9654b87ed8ebe39e314e9c060ef91f57e50",
+      "size": 1523
+    },
+    "proprietary-files-x86_64-nongrouper.txt": {
+      "sha256": "2599ff49ba2a6ab4855e7d77962a1feac06afa6ffdf386b729249939f3d4c0fb",
+      "size": 124
+    },
+    "proprietary-files-x86_64.txt": {
+      "sha256": "1f79e3761c1f205dad477e14a47a87aa9dde15d0db6b56038ce720a6ac63cf7c",
+      "size": 213
+    },
+    "update-binary": {
+      "sha256": "942cb36151928e44fb31aee50563cf728ad8191d41e9a550be0c27ce8005bdb5",
+      "size": 9093
+    },
+    "x86_64/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "97b1767838c2cfe1efbfb748d22ad20b56eca1a0ab1b7ab206f1af84ab5cdefe",
+      "size": 984624
+    },
+    "x86_64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "9a238b2dd7a4aa9cf766d31201e6285bb3a203c3d73cfa0de2073bbd6014c8fd",
+      "size": 948864
+    }
+  },
+  "16.0.0": {
+    "arm/proprietary/product/lib/libjni_latinimegoogle.so": {
+      "sha256": "2167b5aec28fb7a14f704becc2dfff3b719c84d2601b063e69eb01fedc0c185c",
+      "size": 943652
+    },
+    "arm64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "41a39a7410dfe3e90d530aeca84cb4dfbe2c2e411ca7470cb32e93625a5f33e0",
+      "size": 1112352
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-google.xml": {
+      "sha256": "4513efc5d1e2efe0619d1b3551a6016813a02beb862c849ef6d6e26f7335ea9c",
+      "size": 3521,
+      "xml_elem_count": 32,
+      "xml_semantic_sha256": "56310529d70f66b11bbd09bef6b3383d9c17b134cafc853b58b158073b8bb9b5"
+    },
+    "common/proprietary/product/etc/default-permissions/default-permissions-mtg.xml": {
+      "sha256": "250a22a5b0fd63140ae3842404d3ea85b5f390962d8350c96ff4b7ce4029a4f3",
+      "size": 1453,
+      "xml_elem_count": 17,
+      "xml_semantic_sha256": "0fc7466819ba1085ca0a12f0107793229b0dae48eb215cfc4fcdb2de4b51a2fb"
+    },
+    "common/proprietary/product/etc/init/gapps.rc": {
+      "sha256": "29e185019f9f244adc396e40e2ee1d482fd98d515f4aec9feacd6b685cab1a66",
+      "size": 95
+    },
+    "common/proprietary/product/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "b3b530828259e81adffbd78cd64735afe65849f78dc2bb09b62e14b8ddef3244",
+      "size": 610,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "b2c7223a7aa859ecf4abb8d142728f4e6dc8b11cbf3e0cb8d9e27461a979a923"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-google-product.xml": {
+      "sha256": "52a29afb2c2657624a7e66f47b70a26ad503c1f5f107347980e9d8f6d5574605",
+      "size": 29364,
+      "xml_elem_count": 399,
+      "xml_semantic_sha256": "d041c2aaadf70c881a1a80381629f0b369cad407b48d288cc8d1484958c7ec00"
+    },
+    "common/proprietary/product/etc/permissions/privapp-permissions-mtg.xml": {
+      "sha256": "ba124a28fed8760be03259311766556e29ac5ac766842362c571bf029071d356",
+      "size": 362,
+      "xml_elem_count": 5,
+      "xml_semantic_sha256": "99a3b6253cd731521bd0f1b93b9fb6e8dd289be8367e86936479d474a0af424f"
+    },
+    "common/proprietary/product/etc/security/fsverity/gms_fsverity_cert.der": {
+      "sha256": "1a78f5d70b87441c7d13384179e377f4f3105be25814eef05cd95d1b736775b9",
+      "size": 1484
+    },
+    "common/proprietary/product/etc/sysconfig/d2d_cable_migration_feature.xml": {
+      "sha256": "364372d5bb87bbf22b2628b14e2b56d521fb17ce27df804713c6fbea2eb2088c",
+      "size": 136,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "69ae912dfb2b6f14126ae697c0d033849feba06b301c3b433374565b1dd7191a"
+    },
+    "common/proprietary/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml": {
+      "sha256": "47612877a9484d9426a9964843016f0da34153f7f1446fbabcfba7e469790cd1",
+      "size": 4259,
+      "xml_elem_count": 57,
+      "xml_semantic_sha256": "81e7965f955cb9c52073469962ccdac8a228f6a49952e75daa6b7bd344f21607"
+    },
+    "common/proprietary/product/etc/sysconfig/google.xml": {
+      "sha256": "edf812885b78966b74f121d13d1ef7120aeab2b51211182b709bfb3c93b91330",
+      "size": 6127,
+      "xml_elem_count": 50,
+      "xml_semantic_sha256": "3e870ea54768369f765a6530f415bd65c4dcd68b5b5dc480c3422a1b5adf3598"
+    },
+    "common/proprietary/product/etc/sysconfig/sysconfig-mtg.xml": {
+      "sha256": "1168d925f94032c7e464e225f8eda63f530bfae9d200630e4ed65bcc8bc2a9d3",
+      "size": 320,
+      "xml_elem_count": 5,
+      "xml_semantic_sha256": "e021e623a625f112dc366e2338b42ac37fdaafdb2e4c1dbffabacc16b1f44f34"
+    },
+    "common/proprietary/product/etc/sysconfig/wellbeing.xml": {
+      "sha256": "eb737eb93ffa855638793cf898c9bb73dff81fa48fa0ecaf7707280a9f1b2753",
+      "size": 118,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "3c4fe651e5568f30b5a335fd1ebbbeaf5a36d1badd78aa3892dda45f1341b709"
+    },
+    "common/proprietary/product/framework/com.google.android.dialer.support.jar": {
+      "sha256": "584859f94fe2dd0c4aec65f514a990b6f4fc8290bfd7565e2fe036d761aee89e",
+      "size": 946
+    },
+    "common/proprietary/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml": {
+      "sha256": "9fa1a0cc067411bba99803e216db8485fe5b921771fa2b9bfeb0ea1d9ee0c805",
+      "size": 4569,
+      "xml_elem_count": 63,
+      "xml_semantic_sha256": "69f59e5a49b97eb36d38b770d94c623768d5a59f63c7b6b03c8d84e740d60b2e"
+    },
+    "overlay/GmsOverlay/AndroidManifest.xml": {
+      "sha256": "216fbec910930dd392fe1bf4713164a5fb8266e8119a0141265b78b5646bc781",
+      "size": 326,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "a273593037f68a683139357009ef08840ed4f2acee7947fa8a442dd5cbb24196"
+    },
+    "overlay/GmsOverlay/res/values/config.xml": {
+      "sha256": "f4bc1493b4fd1bd73b0313fc7406207dd07bfed78b5da496f2a058357685297e",
+      "size": 8110,
+      "xml_elem_count": 41,
+      "xml_semantic_sha256": "4f27960b39df801079d0b12366a140d69abc4aef865287fbdb8a209d6492b776"
+    },
+    "overlay/GmsSettingsOverlay/AndroidManifest.xml": {
+      "sha256": "eb4f6efb048b68f85f882813fbb5e4ba87dedcc1166d764f09ec359fec4b34e9",
+      "size": 347,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "f600fd23def469c90ca220c00a9e8a7bb2c44fc7eeb88044401f7447df8ee942"
+    },
+    "overlay/GmsSettingsOverlay/res/values/config.xml": {
+      "sha256": "4695125fe07050b7e98c3b987b6ef87a74ca073d9f6992bc6ea46827ee11c756",
+      "size": 1319,
+      "xml_elem_count": 5,
+      "xml_semantic_sha256": "4add5acac17101da21ee0674093a0919c52787bb2a48c09331b0ce01544d5b10"
+    },
+    "overlay/GmsSettingsProviderOverlay/AndroidManifest.xml": {
+      "sha256": "9f059e31b8fed8a38bc753b7d5f00ffe7645b2b6f079132193913e72e4f039c2",
+      "size": 365,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "3ed966b170ebf4db15b2ed6b67796292eadbe667d5bb24dce7009e9426a57711"
+    },
+    "overlay/GmsSettingsProviderOverlay/res/values/defaults.xml": {
+      "sha256": "9244a0445865c23e1e85645ab57f2b7c71e53bb3392589dcf0bc815a95f0f3b8",
+      "size": 188,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "78e5c2a103258dcb512490d392417207bd8fd3a7213f9744694cd556aea812b3"
+    },
+    "overlay/GmsSetupWizardOverlay/AndroidManifest.xml": {
+      "sha256": "d81ec7c41f2502960217d25d7fb71e21604a1dd00e32b10041f9973817f876a4",
+      "size": 355,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "c8c0df092d936ab425edfeddc45824eb3c49d47de2b98f224d5195fea0b4ab82"
+    },
+    "overlay/GmsSetupWizardOverlay/res/values/bools.xml": {
+      "sha256": "d2ec5d8f7121dc3b7b1ed1aabf7219412677e21871277cbf8f09682463e2f55e",
+      "size": 354,
+      "xml_elem_count": 6,
+      "xml_semantic_sha256": "895c9f099f079f42a2fb1aa45494277ebc05aac314f133386b729b427f9c6727"
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "57d5585fe8a8a4a59cd93d726ec9da61bf4304b1d1e2a6f83fc058df18628dee",
+      "size": 240
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "687ca7572d0dbe3e72d2aa3d5045a42d3016eb29f6905b56c62a64aaac4ee4ed",
+      "size": 174
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "848a2fbcdb9ea713619ba9c50e0ddf343455086a61caca46ae1b7d0ee7211421",
+      "size": 339
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "20b1a8c1ba614c31d016ddcd0996966d49934f786ebcfb60460adfa571b85dc0",
+      "size": 176
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "f3700f07aa10ca88998ad34267e6140c4404cb938992e6e5c0cb3183448e6c96",
+      "size": 147
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "5dac48775cb244e0462a83234f05106b9fb266bdf75a5581d2529aa2d35dd04d",
+      "size": 1524
+    },
+    "proprietary-files-x86_64-nongrouper.txt": {
+      "sha256": "2599ff49ba2a6ab4855e7d77962a1feac06afa6ffdf386b729249939f3d4c0fb",
+      "size": 124
+    },
+    "proprietary-files-x86_64.txt": {
+      "sha256": "287e03df74e0a04ea0e7a95800238b0b3c0f811f3ad0a477e8e1969e1fc0fbc5",
+      "size": 176
+    },
+    "update-binary": {
+      "sha256": "942cb36151928e44fb31aee50563cf728ad8191d41e9a550be0c27ce8005bdb5",
+      "size": 9093
+    },
+    "x86_64/proprietary/product/lib64/libjni_latinimegoogle.so": {
+      "sha256": "9a238b2dd7a4aa9cf766d31201e6285bb3a203c3d73cfa0de2073bbd6014c8fd",
+      "size": 948864
+    }
+  },
+  "9.0.0": {
+    "arm/proprietary/app/MarkupGoogle/lib/arm/libsketchology_native.so": {
+      "sha256": "a4168da8391328b658a52ce47ee976b13821679a9ad699b3c02eb42a3fada1fc",
+      "size": 1429724
+    },
+    "arm/proprietary/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/app/MarkupGoogle/lib/arm64/libsketchology_native.so": {
+      "sha256": "116fe4498078d2e099197f82631baedb60436ef72aea215626cb52e7bd9181dd",
+      "size": 2019184
+    },
+    "arm64/proprietary/lib/libjni_latinimegoogle.so": {
+      "sha256": "442a2a8bfcb25489564bc9433a916fa4dc0dba9000fe6f6f03f5939b985091e6",
+      "size": 943652
+    },
+    "arm64/proprietary/lib64/libjni_latinimegoogle.so": {
+      "sha256": "b1049983e6ac5cfc6d1c66e38959751044fad213dff0637a6cf1d2a2703e754f",
+      "size": 1112352
+    },
+    "common/proprietary/etc/default-permissions/default-permissions.xml": {
+      "sha256": "26d09ef0795c45c27b33a8439a6f5d1d2750e9fed5d3df8ec0804b09da6edc44",
+      "size": 4783,
+      "xml_elem_count": 29,
+      "xml_semantic_sha256": "223972d6d7d571aa388d214f3cfb00aac9792a3f6c2782e3d8a311d7d151b49d"
+    },
+    "common/proprietary/etc/permissions/com.google.android.dialer.support.xml": {
+      "sha256": "c6d1631f407087f99cdc9bf680fd8678cd9607f20c6da95f5b45a596c9931776",
+      "size": 563,
+      "xml_elem_count": 3,
+      "xml_semantic_sha256": "0231922aeb01375a135e476cfce17c491f981d6ed056d8b62152af008f14c051"
+    },
+    "common/proprietary/etc/permissions/com.google.android.maps.xml": {
+      "sha256": "51110dd5c9b92983c5d36684fb0539642bc27e1d67f81d36e4698eddd5405eef",
+      "size": 816,
+      "xml_elem_count": 2,
+      "xml_semantic_sha256": "4eace105dae90db62998207396b0edfea91594f6e548b97150281e4f0ac54b20"
+    },
+    "common/proprietary/etc/permissions/privapp-permissions-google.xml": {
+      "sha256": "fb4732b927a88d09b6ce13e3e0999a347d330d16d8b910241917a1bd2122af7e",
+      "size": 26616,
+      "xml_elem_count": 356,
+      "xml_semantic_sha256": "a08b4b6411dc8fc5a4a76e8365ffbd674df446d5f27a69687767a66b21863968"
+    },
+    "common/proprietary/etc/sysconfig/google-hiddenapi-package-whitelist.xml": {
+      "sha256": "07a19be61ce7d6b93da5bce748bdd6a5d49af037d54ec2de831261a9398e3d01",
+      "size": 7434,
+      "xml_elem_count": 90,
+      "xml_semantic_sha256": "6de0190c9ffb01a70176bb2307d913fc4e54a92154cd1786fa12236bfce35da4"
+    },
+    "common/proprietary/etc/sysconfig/google.xml": {
+      "sha256": "bc761eab478bbe627ba5b5e73120b9f0b3b766fd743ecfa139f19bb976140b8b",
+      "size": 5239,
+      "xml_elem_count": 40,
+      "xml_semantic_sha256": "861ab1e108eaa038d0d678eb048e312bc9456a188e168585a754abf374ef1f0a"
+    },
+    "common/proprietary/etc/sysconfig/google_build.xml": {
+      "sha256": "724875dc95f7fb7eb950714f9a474a9a304e081626d9364647e02409e4bdae9c",
+      "size": 1106,
+      "xml_elem_count": 4,
+      "xml_semantic_sha256": "a7880dc4728e2030924fb564be172e9ba57d778384ca42c06ba7f10f5a1ccf6c"
+    },
+    "common/proprietary/framework/com.google.android.dialer.support.jar": {
+      "sha256": "c4fe6ea798ef9b6f82d0de5c7fe7248b808ec92684222936645126aa3cbd30de",
+      "size": 663
+    },
+    "common/proprietary/framework/com.google.android.maps.jar": {
+      "sha256": "2fdb460c6a7c3f9bfc479ed9af76b8c86b8eb52a6b6fcd319637fad266cac08d",
+      "size": 169386
+    },
+    "proprietary-files-arm-nongrouper.txt": {
+      "sha256": "24c562cc1d164253572f5c22909ae10d815c2f09613d8ff516c185a5c041bbe1",
+      "size": 256
+    },
+    "proprietary-files-arm.txt": {
+      "sha256": "72e47de7c9e0ee1b3b461041533821376ed0410b526de4131f20ae1486d23cb0",
+      "size": 167
+    },
+    "proprietary-files-arm64-nongrouper.txt": {
+      "sha256": "dc1cd3d3d453e8573639077e5ccfc41ec6358ac33cde34d2faa5cda7bbf2c364",
+      "size": 258
+    },
+    "proprietary-files-arm64.txt": {
+      "sha256": "b94c270b520aaf5031252ae262dca6153f7166c4e4e483e08c31cb139809cda7",
+      "size": 239
+    },
+    "proprietary-files-common-nongrouper.txt": {
+      "sha256": "ca9e8e2b72c1e44a35a6eea4d6e8487c9083175811135c7d13505a59358a1e62",
+      "size": 200
+    },
+    "proprietary-files-common.txt": {
+      "sha256": "29aa6b09acd4accc5d2313aad6a2d9de41689a99c252eb1763742e3f503fa0b3",
+      "size": 1086
+    },
+    "proprietary-files-x86-nongrouper.txt": {
+      "sha256": "0fc29c9b0e0c18815861d38b9ca67567741041c92711e248f6db054c15def356",
+      "size": 79
+    },
+    "proprietary-files-x86.txt": {
+      "sha256": "0afb99c5a1a8f76f65a7c814735429187397c53d9ca00662ec81386789b46071",
+      "size": 167
+    },
+    "update-binary": {
+      "sha256": "7398b5e3952e123edf18bb896ca9800575484a1150f1077a0d7901d485bf31a2",
+      "size": 3674
+    },
+    "x86/proprietary/lib/libjni_latinimegoogle.so": {
+      "sha256": "c882e12e6d48dd946e0b644c66868a720bd11ac3fecf152000e21a3d5abd59c9",
+      "size": 984624
+    }
+  },
+  "common": {
+    "sign/testkey.pk8": {
+      "sha256": "495675d32e89a149d5abe191f4e9c0e218b9068714e9b53a7c91e164a0741a23",
+      "size": 1217
+    },
+    "sign/testkey.x509.pem": {
+      "sha256": "a4384ba815b9499a5ce349b4e33c1755278873fe2eac150a068823f526e6dbde",
+      "size": 1675
+    },
+    "toybox/toybox-arm": {
+      "sha256": "3dfaacc17df061913f47258a1aadcf1a42167f814de73de57c737b650340ecca",
+      "size": 1188740
+    },
+    "toybox/toybox-arm64": {
+      "sha256": "5aacaf22029f6db386be95dfd22632da67098949f3feca342a0301c39b3f8486",
+      "size": 1579256
+    },
+    "toybox/toybox-x86": {
+      "sha256": "090125c40ff224dc1e6504026e3495ac33b7a891ab2e29a61a21c2787332fa0d",
+      "size": 1755128
+    },
+    "toybox/toybox-x86_64": {
+      "sha256": "81d233e15e3a3298eaa74a95645b33e568338a90dc8e3447f3488823b444d8bd",
+      "size": 1764544
+    }
+  }
+}

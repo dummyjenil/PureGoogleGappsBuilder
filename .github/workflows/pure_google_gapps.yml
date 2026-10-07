@@ -39,6 +39,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
+      - name: Strictly Verify res/ + patch/ Parity (All 9 Android Versions)
+        run: python3 -m patch
+
       - name: Fetch previous state from GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,7 +84,7 @@ jobs:
           echo "revisions_b64=$B64_STATE" >> "$GITHUB_OUTPUT"
 
   # =========================================================================
-  # 2. Extract & Build in Parallel -> Upload to Release + Analyze Local ZIP
+  # 2. Extract & Build in Parallel -> Strictly Verify -> Upload to Release
   # =========================================================================
   build-gapps:
     name: Build Android ${{ matrix.androidv }} (${{ matrix.arch }})
@@ -95,6 +98,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
+
+      - name: Strictly Verify res/ + patch/ Before Build
+        run: python3 -m patch
 
       - name: Install High-Speed Extraction Utilities (aria2, 7z, erofs, simg2img)
         run: |
@@ -119,7 +125,43 @@ jobs:
             --url "${{ matrix.url }}" \
             --out-dir "out_packages"
 
-      - name: Upload Package Directly to GitHub Release (Zero ZIP Artifact Storage)
+      - name: Strictly Verify Built Package & Generate Matrix Analysis Fragment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ZIP_FILE=$(ls out_packages/GoogleGapps-*.zip | head -n 1)
+          FRAG_FILE="out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json"
+          python3 analyze_all_releases.py \
+            --version "${{ matrix.androidv }}" \
+            --arch "${{ matrix.arch }}" \
+            --local-zip "$ZIP_FILE" \
+            --save-fragment "$FRAG_FILE"
+          python3 -c "
+          import json, sys
+          with open('$FRAG_FILE') as f:
+              data = json.load(f)
+          for k, v in data.items():
+              mc = v.get('missing_count', 0)
+              ec = v.get('extra_count', 0)
+              mp = v.get('missing_xml_perms', 0)
+              print(f'[Strict Release Gate] {k}: missing_files={mc}, extra_files={ec}, missing_xml_perms={mp}')
+              if mc != 0 or ec != 0 or mp != 0:
+                  print(f'CRITICAL: Release gate failed for {k}! Refusing to upload to release.')
+                  sys.exit(1)
+          print('[✓] Strict 100% Release Gate Passed!')
+          "
+
+      - name: Upload Tiny Matrix Report Fragment
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: report-fragment-${{ matrix.androidv }}-${{ matrix.arch }}
+          path: out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Upload Verified Package Directly to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -134,27 +176,6 @@ jobs:
             sleep $((attempt * 3))
           done
           exit 1
-
-      - name: Generate Matrix Analysis Fragment (Deep XML & APK Versions)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ZIP_FILE=$(ls out_packages/GoogleGapps-*.zip | head -n 1)
-          python3 analyze_all_releases.py \
-            --version "${{ matrix.androidv }}" \
-            --arch "${{ matrix.arch }}" \
-            --local-zip "$ZIP_FILE" \
-            --save-fragment "out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json" || true
-
-      - name: Upload Tiny Matrix Report Fragment
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: report-fragment-${{ matrix.androidv }}-${{ matrix.arch }}
-          path: out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json
-          compression-level: 0
-          retention-days: 1
-          if-no-files-found: ignore
 
   # =========================================================================
   # 3. Finalize Release State & Publish Merged Analysis Report Artifact

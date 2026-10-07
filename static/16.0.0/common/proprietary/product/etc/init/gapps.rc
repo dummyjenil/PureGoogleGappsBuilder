@@ -1,3 +1,0 @@
-on init
-    setprop ro.com.google.gmsversion 16_202505
-    setprop ro.opa.eligible_device true

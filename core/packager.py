@@ -1,7 +1,7 @@
 """
 Flashable ZIP Packager and Filesystem Structuring Module for PureGoogleGappsBuilder.
 Formats APKs, libraries, permissions, addon.d, overlays, and Recovery installer metadata
-using local `static/` assets and package-name fallback scanning across Android 9.0.0 to 16.0.0.
+using deduplicated `res/` + `patch/` assets and package-name fallback scanning across Android 9.0.0 to 16.0.0.
 """
 
 import os
@@ -19,9 +19,6 @@ from .constants import (
 )
 
 from patch import RES_ROOT, get_patched_version_dir
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC_ROOT = os.path.join(REPO_ROOT, "static")
 
 
 def _get_version_static_dir(android_version: str) -> str:
