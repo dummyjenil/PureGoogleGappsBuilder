@@ -33,6 +33,7 @@ jobs:
       has_updates: ${{ steps.check.outputs.has_updates }}
       matrix: ${{ steps.check.outputs.matrix }}
       update_count: ${{ steps.check.outputs.update_count }}
+      revisions_b64: ${{ steps.state.outputs.revisions_b64 }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -61,17 +62,25 @@ jobs:
             --state-file latest_revisions.json \
             --output-json latest_revisions.json $FORCE_FLAG
 
-      - name: Upload State Artifact
+      - name: Ensure Permanent Release Exists & Export State Output
+        id: state
         if: steps.check.outputs.has_updates == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: latest_revisions_state
-          path: latest_revisions.json
-          compression-level: 0
-          retention-days: 1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="release"
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "[*] Creating single permanent release '$RELEASE_TAG'..."
+            gh release create "$RELEASE_TAG" \
+              --title "Pure Google GApps" \
+              --notes "" \
+              --latest
+          fi
+          B64_STATE=$(base64 -w 0 latest_revisions.json)
+          echo "revisions_b64=$B64_STATE" >> "$GITHUB_OUTPUT"
 
   # =========================================================================
-  # 2. Extract & Build in Parallel from Google Official Images
+  # 2. Extract & Build in Parallel -> Upload Directly to GitHub Release
   # =========================================================================
   build-gapps:
     name: Build Android ${{ matrix.androidv }} (${{ matrix.arch }})
@@ -109,62 +118,50 @@ jobs:
             --url "${{ matrix.url }}" \
             --out-dir "out_packages"
 
-      - name: Upload Package Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: GoogleGapps-${{ matrix.androidv }}-${{ matrix.arch }}
-          path: out_packages/*.zip
-          compression-level: 0
-          retention-days: 1
-          if-no-files-found: error
+      - name: Upload Package Directly to GitHub Release (Zero Artifact Storage)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="release"
+          ls -lh out_packages/*.zip
+          for attempt in 1 2 3 4 5; do
+            if gh release upload "$RELEASE_TAG" out_packages/*.zip --clobber; then
+              echo "[✓] Uploaded directly to '$RELEASE_TAG' release on attempt $attempt."
+              exit 0
+            fi
+            echo "[!] Upload attempt $attempt failed, retrying in $((attempt * 3))s..."
+            sleep $((attempt * 3))
+          done
+          exit 1
 
   # =========================================================================
-  # 3. Publish to Single Persistent GitHub Release (Replace Files)
+  # 3. Finalize Release State & Generate Analysis Report Artifact
   # =========================================================================
   publish-release:
-    name: Publish Release (Replace Files)
+    name: Finalize Release & Generate Analysis Report
     needs: [check-for-updates, build-gapps]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
 
-      - name: Download All Artifacts (Packages + State)
-        uses: actions/download-artifact@v8
-        with:
-          path: release_packages
-          merge-multiple: true
-
-      - name: Verify Release Assets
-        run: |
-          echo "=== Release Assets to Upload ==="
-          ls -lh release_packages/
-
-      - name: Upload & Replace Assets in Single Permanent Release
+      - name: Update Release State JSON
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVISIONS_B64: ${{ needs.check-for-updates.outputs.revisions_b64 }}
         run: |
-          RELEASE_TAG="release"
-          
-          # Check if release already exists
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "[*] Release '$RELEASE_TAG' exists. Overwriting/replacing files..."
-            gh release upload "$RELEASE_TAG" release_packages/* --clobber
-          else
-            echo "[*] Creating single permanent release '$RELEASE_TAG'..."
-            gh release create "$RELEASE_TAG" release_packages/* \
-              --title "Pure Google GApps" \
-              --notes "" \
-              --latest
+          if [ -n "$REVISIONS_B64" ]; then
+            echo "$REVISIONS_B64" | base64 -d > latest_revisions.json
+            gh release upload release latest_revisions.json --clobber
+            echo "[✓] Updated latest_revisions.json in 'release'."
           fi
-          echo "[✓] Files uploaded successfully to '$RELEASE_TAG' release."
 
       - name: Generate GApps Comparison Report (vs MindTheGapps)
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python3 analyze_all_releases.py --local-dir release_packages || true
+          python3 analyze_all_releases.py || true
           if [ -f "gapps_comparison_report.txt" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
             echo "### 🔍 GApps Release Comparison Report" >> "$GITHUB_STEP_SUMMARY"
             echo '```text' >> "$GITHUB_STEP_SUMMARY"
@@ -172,7 +169,7 @@ jobs:
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload Analysis Report Artifact (Not in Release)
+      - name: Upload Analysis Report Artifact (Only Artifact in Workflow)
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -183,4 +180,5 @@ jobs:
           compression-level: 0
           retention-days: 30
           if-no-files-found: warn
+
 

@@ -19,7 +19,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 MTG_API = "https://api.github.com/repos/s1204IT/MindTheGappsBuilder/releases?per_page=100"
-PURE_API = "https://api.github.com/repos/dummyjenil/PureGoogleGappsBuilder/releases?per_page=10"
+_PURE_REPO = os.environ.get("GITHUB_REPOSITORY") or "dummyjenil/PureGoogleGappsBuilder"
+PURE_API = f"https://api.github.com/repos/{_PURE_REPO}/releases?per_page=10"
 
 
 class RemoteZipInspector:
