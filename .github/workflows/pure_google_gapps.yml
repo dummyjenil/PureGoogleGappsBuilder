@@ -158,3 +158,29 @@ jobs:
               --latest
           fi
           echo "[✓] Files uploaded successfully to '$RELEASE_TAG' release."
+
+      - name: Generate GApps Comparison Report (vs MindTheGapps)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 analyze_all_releases.py --local-dir release_packages || true
+          if [ -f "gapps_comparison_report.txt" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            echo "### 🔍 GApps Release Comparison Report" >> "$GITHUB_STEP_SUMMARY"
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            cat gapps_comparison_report.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Analysis Report Artifact (Not in Release)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gapps-comparison-report
+          path: |
+            gapps_comparison_report.json
+            gapps_comparison_report.txt
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: warn
+

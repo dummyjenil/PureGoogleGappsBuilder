@@ -112,8 +112,35 @@ class RemoteZipInspector:
         return file_map
 
 
+    @staticmethod
+    def inspect_local(path: str):
+        try:
+            import zipfile
+            total_size = os.path.getsize(path)
+            file_map = {}
+            with zipfile.ZipFile(path, "r") as zf:
+                for info in zf.infolist():
+                    if not info.is_dir():
+                        file_map[info.filename.replace("\\", "/")] = {
+                            "size": info.file_size,
+                            "compressed_size": info.compress_size,
+                            "crc32": f"{info.CRC:08x}"
+                        }
+            return {
+                "total_size_bytes": total_size,
+                "size_mb": total_size / (1024 * 1024),
+                "files": file_map
+            }, None
+        except Exception as e:
+            return None, str(e)
+
+
 def fetch_releases_json(api_url: str):
-    req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0 (FastGappsComparator/1.0)"})
+    headers = {"User-Agent": "Mozilla/5.0 (FastGappsComparator/1.0)"}
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(api_url, headers=headers)
     with urllib.request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -168,29 +195,55 @@ def format_size(b: int) -> str:
     return f"{b:5.1f} TB"
 
 
-def run_comparison(target_ver: str = None, target_arch: str = None):
-    print("=" * 80)
-    print("🔍 REMOTE GAPPS COMPARATOR: PureGoogleGapps vs MindTheGapps (All Releases)")
-    print("=" * 80)
+def run_comparison(target_ver: str = None, target_arch: str = None, local_dir: str = None):
+    import re
+    report_lines = []
 
-    print("[*] Fetching release metadata from GitHub APIs...")
-    pure_releases = fetch_releases_json(PURE_API)
-    mtg_releases = fetch_releases_json(MTG_API)
+    def log(msg: str = ""):
+        print(msg)
+        clean_msg = re.sub(r"\033\[[0-9;]*m", "", msg)
+        report_lines.append(clean_msg)
 
-    # 1. Map latest PureGoogleGapps packages
+    log("=" * 80)
+    log("🔍 GAPPS COMPARATOR: PureGoogleGapps vs MindTheGapps (All Releases)")
+    log("=" * 80)
+
+    log("[*] Fetching release metadata from GitHub APIs...")
     pure_packages = {}
-    for rel in pure_releases:
-        for asset in rel.get("assets", []):
-            name = asset.get("name", "")
-            if name.startswith("GoogleGapps-") and name.endswith(".zip"):
-                ver, arch = parse_package_version_and_arch(name)
+    try:
+        pure_releases = fetch_releases_json(PURE_API)
+        for rel in pure_releases:
+            for asset in rel.get("assets", []):
+                name = asset.get("name", "")
+                if name.startswith("GoogleGapps-") and name.endswith(".zip"):
+                    ver, arch = parse_package_version_and_arch(name)
+                    if ver and arch:
+                        pure_packages[(ver, arch)] = {
+                            "name": name,
+                            "url": asset.get("browser_download_url", ""),
+                            "size_bytes": asset.get("size", 0),
+                            "release_tag": rel.get("tag_name", ""),
+                            "local_path": None,
+                        }
+    except Exception as e:
+        log(f"[!] Note: Could not fetch remote PureGoogleGapps releases ({e})")
+
+    # Override/supplement with local built packages if --local-dir is provided
+    if local_dir and os.path.isdir(local_dir):
+        for fname in sorted(os.listdir(local_dir)):
+            if fname.startswith("GoogleGapps-") and fname.endswith(".zip"):
+                ver, arch = parse_package_version_and_arch(fname)
                 if ver and arch:
+                    fpath = os.path.join(local_dir, fname)
                     pure_packages[(ver, arch)] = {
-                        "name": name,
-                        "url": asset.get("browser_download_url", ""),
-                        "size_bytes": asset.get("size", 0),
-                        "release_tag": rel.get("tag_name", "")
+                        "name": fname,
+                        "url": f"local://{fpath}",
+                        "size_bytes": os.path.getsize(fpath),
+                        "release_tag": "local-build",
+                        "local_path": fpath,
                     }
+
+    mtg_releases = fetch_releases_json(MTG_API)
 
     # 2. Map latest MindTheGapps packages (picking the newest release tag per ver/arch)
     mtg_packages = {}
@@ -224,16 +277,23 @@ def run_comparison(target_ver: str = None, target_arch: str = None):
         if key in pure_packages and key in mtg_packages:
             matching_pairs.append((ver, arch, pure_packages[key], mtg_packages[key]))
 
-    print(f"[✓] Discovered {len(pure_packages)} PureGoogleGapps packages & {len(mtg_packages)} MindTheGapps targets.")
-    print(f"[*] Comparing {len(matching_pairs)} corresponding (Version, Arch) pairs...\n")
+    log(f"[✓] Discovered {len(pure_packages)} PureGoogleGapps packages & {len(mtg_packages)} MindTheGapps targets.")
+    log(f"[*] Comparing {len(matching_pairs)} corresponding (Version, Arch) pairs...\n")
 
-    # Fetch zip central directories concurrently
+    # Inspect local and remote ZIPs
+    inspected_data = {}
     urls_to_fetch = {}
     for ver, arch, p_pkg, m_pkg in matching_pairs:
-        urls_to_fetch[p_pkg["url"]] = p_pkg["name"]
+        if p_pkg.get("local_path"):
+            res, err = RemoteZipInspector.inspect_local(p_pkg["local_path"])
+            if res:
+                inspected_data[p_pkg["url"]] = res
+            else:
+                log(f"[!] Warning: Failed to read local zip {p_pkg['name']}: {err}")
+        else:
+            urls_to_fetch[p_pkg["url"]] = p_pkg["name"]
         urls_to_fetch[m_pkg["url"]] = m_pkg["name"]
 
-    inspected_data = {}
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {executor.submit(RemoteZipInspector.inspect, url): url for url in urls_to_fetch}
         for future in as_completed(futures):
@@ -243,13 +303,13 @@ def run_comparison(target_ver: str = None, target_arch: str = None):
             if res:
                 inspected_data[url] = res
             else:
-                print(f"[!] Warning: Failed to read metadata for {name}: {err}")
+                log(f"[!] Warning: Failed to read metadata for {name}: {err}")
 
     # Run comparisons
     comparison_results = []
-    print("=" * 80)
-    print(f"{'Target Version & Architecture':<28} | {'Pure GApps':<12} | {'MindTheGapps':<12} | {'Tree Status'}")
-    print("-" * 80)
+    log("=" * 80)
+    log(f"{'Target Version & Architecture':<28} | {'Pure GApps':<12} | {'MindTheGapps':<12} | {'Tree Status'}")
+    log("-" * 80)
 
     for ver, arch, p_pkg, m_pkg in matching_pairs:
         p_res = inspected_data.get(p_pkg["url"])
@@ -262,51 +322,55 @@ def run_comparison(target_ver: str = None, target_arch: str = None):
         comparison_results.append(comp)
 
         status_str = "\033[1;32m[✓ 100% MATCH]\033[0m" if comp["is_perfect_tree_match"] else f"\033[1;33m[⚠ {len(comp['only_in_pure'])+len(comp['only_in_mtg'])} DIFFS]\033[0m"
-        print(f"Android {ver:<8} ({arch:<7}) | {comp['pure_size_mb']:>6.1f} MB     | {comp['mtg_size_mb']:>6.1f} MB     | {status_str}")
+        log(f"Android {ver:<8} ({arch:<7}) | {comp['pure_size_mb']:>6.1f} MB     | {comp['mtg_size_mb']:>6.1f} MB     | {status_str}")
 
-    print("=" * 80)
+    log("=" * 80)
 
     # Print detailed differences for each pair
-    print("\n" + "=" * 80)
-    print("📑 DETAILED DIFFERENCE BREAKDOWN PER PACKAGE")
-    print("=" * 80)
+    log("\n" + "=" * 80)
+    log("📑 DETAILED DIFFERENCE BREAKDOWN PER PACKAGE")
+    log("=" * 80)
 
     for comp in comparison_results:
         ver = comp["version"]
         arch = comp["arch"]
-        print(f"\n📦 Android {ver} ({arch}):")
-        print(f"   • PureGoogleGapps Size: {comp['pure_size_mb']:.2f} MB ({comp['pure_total_files']} files)")
-        print(f"   • MindTheGapps Size   : {comp['mtg_size_mb']:.2f} MB ({comp['mtg_total_files']} files)")
+        log(f"\n📦 Android {ver} ({arch}):")
+        log(f"   • PureGoogleGapps Size: {comp['pure_size_mb']:.2f} MB ({comp['pure_total_files']} files)")
+        log(f"   • MindTheGapps Size   : {comp['mtg_size_mb']:.2f} MB ({comp['mtg_total_files']} files)")
 
         if comp["is_perfect_tree_match"]:
-            print("   \033[1;32m✓ Perfect File Structure Match! (Zero missing or extra files)\033[0m")
+            log("   \033[1;32m✓ Perfect File Structure Match! (Zero missing or extra files)\033[0m")
         else:
             if comp["only_in_pure"]:
-                print(f"   \033[1;31m+ Files ONLY in PureGoogleGapps ({len(comp['only_in_pure'])}):\033[0m")
+                log(f"   \033[1;31m+ Files ONLY in PureGoogleGapps ({len(comp['only_in_pure'])}):\033[0m")
                 for f in comp["only_in_pure"][:10]:
-                    print(f"       + {f}")
+                    log(f"       + {f}")
                 if len(comp["only_in_pure"]) > 10:
-                    print(f"       ... and {len(comp['only_in_pure']) - 10} more")
+                    log(f"       ... and {len(comp['only_in_pure']) - 10} more")
 
             if comp["only_in_mtg"]:
-                print(f"   \033[1;34m- Files ONLY in MindTheGapps ({len(comp['only_in_mtg'])}):\033[0m")
+                log(f"   \033[1;34m- Files ONLY in MindTheGapps ({len(comp['only_in_mtg'])}):\033[0m")
                 for f in comp["only_in_mtg"][:10]:
-                    print(f"       - {f}")
+                    log(f"       - {f}")
                 if len(comp["only_in_mtg"]) > 10:
-                    print(f"       ... and {len(comp['only_in_mtg']) - 10} more")
+                    log(f"       ... and {len(comp['only_in_mtg']) - 10} more")
 
         if comp["size_diffs"]:
-            print(f"   \033[90m~ Top Size Differences in Common Components:\033[0m")
+            log(f"   \033[90m~ Top Size Differences in Common Components:\033[0m")
             for f, psz, msz, pct in comp["size_diffs"][:5]:
-                print(f"       ~ {os.path.basename(f):<35} (Pure: {format_size(psz).strip()} vs MTG: {format_size(msz).strip()})")
+                log(f"       ~ {os.path.basename(f):<35} (Pure: {format_size(psz).strip()} vs MTG: {format_size(msz).strip()})")
 
-    # Export report
+    # Export JSON and TXT reports
     report_file = "gapps_comparison_report.json"
     with open(report_file, "w") as f:
         json.dump(comparison_results, f, indent=2)
 
+    txt_report_file = "gapps_comparison_report.txt"
+    with open(txt_report_file, "w") as f:
+        f.write("\n".join(report_lines) + "\n")
+
     print("\n" + "=" * 80)
-    print(f"🎉 Comparison Report saved to: {os.path.abspath(report_file)}")
+    print(f"🎉 Comparison Reports saved to:\n   - {os.path.abspath(report_file)}\n   - {os.path.abspath(txt_report_file)}")
     print("=" * 80 + "\n")
 
 
@@ -314,9 +378,10 @@ def main():
     parser = argparse.ArgumentParser(description="High-Performance Remote GApps ZIP Tree Analyzer & Comparator")
     parser.add_argument("--version", help="Filter specific Android version (e.g. 13.0.0)")
     parser.add_argument("--arch", help="Filter specific architecture (e.g. x86_64, arm64)")
+    parser.add_argument("--local-dir", help="Optional directory containing newly built GoogleGapps-*.zip packages")
     args = parser.parse_args()
 
-    run_comparison(args.version, args.arch)
+    run_comparison(args.version, args.arch, args.local_dir)
 
 
 if __name__ == "__main__":
