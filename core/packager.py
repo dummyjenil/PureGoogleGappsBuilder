@@ -82,7 +82,14 @@ def fetch_target_file_list_for_branch(branch: str, arch: str) -> dict:
 
 
 def find_android_jar(sdk_version: int):
-    """Locates android.jar fast by inspecting SDK platforms directories without recursive globbing"""
+    """
+    Locates an aapt-v1-compatible android.jar (SDK <= 34) fast by inspecting SDK
+    platforms directories without recursive globbing.
+    Note: Android 15+ (android-35, android-36) uses compact resource tables in android.jar
+    that legacy aapt v1 cannot parse, whereas android-34 (or <= 34) compiles overlays for
+    all Android 12–16 branches cleanly.
+    """
+    target_sdk = min(sdk_version, 34)
     sdk_roots = [
         os.environ.get("ANDROID_HOME"),
         os.environ.get("ANDROID_SDK_ROOT"),
@@ -93,12 +100,21 @@ def find_android_jar(sdk_version: int):
     for root in sdk_roots:
         if not root:
             continue
-        exact = os.path.join(root, "platforms", f"android-{sdk_version}", "android.jar")
+        exact = os.path.join(root, "platforms", f"android-{target_sdk}", "android.jar")
         if os.path.isfile(exact):
             return exact
         plat_dir = os.path.join(root, "platforms")
         if os.path.isdir(plat_dir):
-            for entry in sorted(os.listdir(plat_dir), reverse=True):
+            candidates = []
+            for entry in os.listdir(plat_dir):
+                if entry.startswith("android-"):
+                    try:
+                        ver = int(entry.split("-")[1])
+                        if ver <= 34:
+                            candidates.append((ver, entry))
+                    except ValueError:
+                        pass
+            for _, entry in sorted(candidates, reverse=True):
                 cand = os.path.join(plat_dir, entry, "android.jar")
                 if os.path.isfile(cand):
                     return cand
@@ -482,12 +498,13 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     with open(os.path.join(addon_dir, "addond_tail"), "w", newline="\n") as f:
         f.write(ADDOND_TAIL.strip() + "\n")
 
-    # Build prop info (exact MTG format)
-    build_prop_path = os.path.join(target_pkg_dir, "build.prop")
-    with open(build_prop_path, "w", newline="\n") as f:
-        f.write(f"arch={arch}\n")
-        f.write(f"version={sdk_version}\n")
-        f.write(f"version_nice={android_version}\n")
+    # Build prop info (exact MTG format, introduced in Android 10 / SDK 29+)
+    if sdk_version >= 29:
+        build_prop_path = os.path.join(target_pkg_dir, "build.prop")
+        with open(build_prop_path, "w", newline="\n") as f:
+            f.write(f"arch={arch}\n")
+            f.write(f"version={sdk_version}\n")
+            f.write(f"version_nice={android_version}\n")
 
     return included_files
 
@@ -500,6 +517,15 @@ def create_flashable_zip(source_dir: str, output_zip_path: str):
     output_zip_path = os.path.abspath(output_zip_path)
     if os.path.exists(output_zip_path):
         os.remove(output_zip_path)
+
+    # Fetch AOSP testkey.x509.pem for META-INF/com/android/otacert (matches signapk -w)
+    otacert_path = os.path.join(source_dir, "META-INF", "com", "android", "otacert")
+    try:
+        os.makedirs(os.path.dirname(otacert_path), exist_ok=True)
+        with open(otacert_path, "wb") as f:
+            f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.x509.pem", timeout=10))
+    except Exception:
+        pass
 
     # Use standard fixed date for reproducibility (2009-01-01)
     deterministic_datetime = (2009, 1, 1, 0, 0, 0)
@@ -521,7 +547,7 @@ def create_flashable_zip(source_dir: str, output_zip_path: str):
                 with open(full_path, "rb") as f_in:
                     zipf.writestr(zinfo, f_in.read())
 
-    # 2. Sign with standard AOSP testkey using apksigner
+    # 2. Sign with standard AOSP testkey using apksigner (--v1-signer-name CERT to match signapk)
     has_apksigner = shutil.which("apksigner") is not None
     if has_apksigner:
         try:
@@ -534,7 +560,14 @@ def create_flashable_zip(source_dir: str, output_zip_path: str):
                 with open(pem_file, "wb") as f:
                     f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.x509.pem", timeout=10))
 
-                cmd = ["apksigner", "sign", "--key", pk8_file, "--cert", pem_file, "--min-sdk-version", "28", output_zip_path]
+                cmd = [
+                    "apksigner", "sign",
+                    "--v1-signer-name", "CERT",
+                    "--key", pk8_file,
+                    "--cert", pem_file,
+                    "--min-sdk-version", "28",
+                    output_zip_path,
+                ]
                 subprocess.run(cmd, check=True, capture_output=True, timeout=30)
                 print("    [✓] ZIP signed successfully with AOSP testkey (apksigner)")
         except Exception as e:

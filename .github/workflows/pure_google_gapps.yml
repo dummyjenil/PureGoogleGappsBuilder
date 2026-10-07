@@ -97,7 +97,8 @@ jobs:
             erofs-utils \
             e2fsprogs \
             aapt \
-            apksigner
+            apksigner \
+            android-sdk-platform-23
 
       - name: Extract & Package Pure Google GApps
         run: |

@@ -2,9 +2,9 @@
   {
     "version": "10.0.0",
     "arch": "arm64",
-    "pure_size_mb": 112.58061408996582,
+    "pure_size_mb": 130.56152820587158,
     "mtg_size_mb": 127.08520698547363,
-    "pure_total_files": 29,
+    "pure_total_files": 34,
     "mtg_total_files": 35,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -13,15 +13,16 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/lib/libjni_latinimegoogle.so",
-      "system/lib64/libjni_latinimegoogle.so",
-      "system/priv-app/Phonesky/Phonesky.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 27,
+    "common_count": 32,
     "size_diffs": [
+      [
+        "system/etc/permissions/privapp-permissions-google.xml",
+        47470,
+        4291,
+        90.96060669896777
+      ],
       [
         "system/app/MarkupGoogle/MarkupGoogle.apk",
         9310042,
@@ -70,9 +71,9 @@
   {
     "version": "10.0.0",
     "arch": "x86",
-    "pure_size_mb": 123.61566829681396,
+    "pure_size_mb": 125.2487678527832,
     "mtg_size_mb": 124.5307674407959,
-    "pure_total_files": 28,
+    "pure_total_files": 31,
     "mtg_total_files": 32,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -81,13 +82,16 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/lib/libjni_latinimegoogle.so"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 26,
+    "common_count": 29,
     "size_diffs": [
+      [
+        "system/etc/permissions/privapp-permissions-google.xml",
+        47470,
+        4291,
+        90.96060669896777
+      ],
       [
         "system/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
         2743322,
@@ -130,9 +134,9 @@
   {
     "version": "11.0.0",
     "arch": "arm64",
-    "pure_size_mb": 165.662579536438,
+    "pure_size_mb": 176.51874923706055,
     "mtg_size_mb": 185.48378372192383,
-    "pure_total_files": 27,
+    "pure_total_files": 34,
     "mtg_total_files": 35,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -141,22 +145,21 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/MarkupGoogle/lib/arm64/libsketchology_native.so",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/app/talkback/talkback.apk",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
-      "system/product/priv-app/AndroidAutoStubPrebuilt/AndroidAutoStubPrebuilt.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 25,
+    "common_count": 32,
     "size_diffs": [
       [
         "system/product/priv-app/Phonesky/Phonesky.apk",
         57593610,
         22290178,
         61.297480744825684
+      ],
+      [
+        "system/product/etc/permissions/privapp-permissions-google-p.xml",
+        61390,
+        30390,
+        50.4968235869034
       ],
       [
         "system/product/app/MarkupGoogle/MarkupGoogle.apk",
@@ -169,6 +172,12 @@
         34765560,
         20316324,
         41.561925077576774
+      ],
+      [
+        "system/system_ext/etc/permissions/privapp-permissions-google-se.xml",
+        13821,
+        10611,
+        23.22552637291079
       ],
       [
         "system/product/priv-app/AndroidMigratePrebuilt/AndroidMigratePrebuilt.apk",
@@ -188,9 +197,9 @@
   {
     "version": "11.0.0",
     "arch": "x86",
-    "pure_size_mb": 141.5842809677124,
+    "pure_size_mb": 144.58470630645752,
     "mtg_size_mb": 157.99562072753906,
-    "pure_total_files": 25,
+    "pure_total_files": 29,
     "mtg_total_files": 30,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -199,19 +208,27 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/priv-app/AndroidAutoStubPrebuilt/AndroidAutoStubPrebuilt.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 23,
+    "common_count": 27,
     "size_diffs": [
+      [
+        "system/product/etc/permissions/privapp-permissions-google-p.xml",
+        61113,
+        30390,
+        50.27244612439252
+      ],
       [
         "system/product/priv-app/Phonesky/Phonesky.apk",
         37412192,
         22290178,
         40.420016020445956
+      ],
+      [
+        "system/system_ext/etc/permissions/privapp-permissions-google-se.xml",
+        13821,
+        10611,
+        23.22552637291079
       ],
       [
         "system/product/priv-app/AndroidMigratePrebuilt/AndroidMigratePrebuilt.apk",
@@ -225,9 +242,9 @@
   {
     "version": "12.1.0",
     "arch": "arm64",
-    "pure_size_mb": 237.31067752838135,
+    "pure_size_mb": 305.7535152435303,
     "mtg_size_mb": 230.49681091308594,
-    "pure_total_files": 24,
+    "pure_total_files": 38,
     "mtg_total_files": 41,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -237,24 +254,10 @@
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
       "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/MarkupGoogle/lib/arm64/libsketchology_native.so",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/app/SpeechServicesByGoogle/SpeechServicesByGoogle.apk",
-      "system/product/app/talkback/talkback.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
       "system/product/overlay/GmsOverlay.apk",
-      "system/product/overlay/GmsSettingsProviderOverlay.apk",
-      "system/product/priv-app/Phonesky/Phonesky.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml"
+      "system/product/overlay/GmsSettingsProviderOverlay.apk"
     ],
-    "common_count": 22,
+    "common_count": 36,
     "size_diffs": [
       [
         "system/product/app/MarkupGoogle/MarkupGoogle.apk",
@@ -263,22 +266,22 @@
         70.55573830295934
       ],
       [
-        "META-INF/MANIFEST.MF",
-        2549,
-        4810,
-        47.00623700623701
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        11504,
+        3975,
+        65.44680111265647
+      ],
+      [
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        56955,
+        20560,
+        63.90132560793609
       ],
       [
         "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
         2816688,
         1505961,
         46.53433394113938
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        6717,
-        3960,
-        41.04510942384994
       ],
       [
         "system/product/priv-app/Velvet/Velvet.apk",
@@ -310,9 +313,9 @@
   {
     "version": "12.1.0",
     "arch": "x86_64",
-    "pure_size_mb": 190.1661434173584,
+    "pure_size_mb": 192.8703155517578,
     "mtg_size_mb": 188.4533634185791,
-    "pure_total_files": 24,
+    "pure_total_files": 34,
     "mtg_total_files": 37,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -322,38 +325,28 @@
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
       "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
       "system/product/overlay/GmsOverlay.apk",
-      "system/product/overlay/GmsSettingsProviderOverlay.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml"
+      "system/product/overlay/GmsSettingsProviderOverlay.apk"
     ],
-    "common_count": 22,
+    "common_count": 32,
     "size_diffs": [
+      [
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        11504,
+        3975,
+        65.44680111265647
+      ],
+      [
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        57334,
+        20560,
+        64.13995186102487
+      ],
       [
         "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
         2816688,
         1505961,
         46.53433394113938
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        6717,
-        3960,
-        41.04510942384994
-      ],
-      [
-        "META-INF/MANIFEST.MF",
-        2546,
-        4294,
-        40.707964601769916
       ],
       [
         "system/product/priv-app/AndroidAutoStub/AndroidAutoStub.apk",
@@ -385,56 +378,40 @@
   {
     "version": "13.0.0",
     "arch": "arm64",
-    "pure_size_mb": 298.55309200286865,
+    "pure_size_mb": 463.2379503250122,
     "mtg_size_mb": 367.87189388275146,
-    "pure_total_files": 27,
+    "pure_total_files": 39,
     "mtg_total_files": 42,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
-      "META-INF/TESTKEY.SF",
-      "system/product/etc/sysconfig/wellbeing.xml",
-      "system/product/priv-app/Wellbeing/Wellbeing.apk"
+      "META-INF/TESTKEY.SF"
     ],
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
       "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/app/SpeechServicesByGoogle/SpeechServicesByGoogle.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/init/gapps.rc",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
       "system/product/overlay/GmsOverlay.apk",
-      "system/product/overlay/GmsSettingsProviderOverlay.apk",
-      "system/product/priv-app/VelvetTitan/VelvetTitan.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml"
+      "system/product/overlay/GmsSettingsProviderOverlay.apk"
     ],
-    "common_count": 23,
+    "common_count": 37,
     "size_diffs": [
+      [
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        12751,
+        4497,
+        64.73217786840247
+      ],
+      [
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        63518,
+        25198,
+        60.32935545829529
+      ],
       [
         "system/product/priv-app/Velvet/Velvet.apk",
         463428658,
         256257637,
         44.70397275258709
-      ],
-      [
-        "META-INF/MANIFEST.MF",
-        2862,
-        4896,
-        41.544117647058826
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        7261,
-        4885,
-        32.722765459303126
       ],
       [
         "system/product/app/talkback/talkback.apk",
@@ -460,48 +437,34 @@
   {
     "version": "13.0.0",
     "arch": "x86_64",
-    "pure_size_mb": 205.4943265914917,
+    "pure_size_mb": 202.2610149383545,
     "mtg_size_mb": 188.75814819335938,
-    "pure_total_files": 25,
+    "pure_total_files": 35,
     "mtg_total_files": 38,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
-      "META-INF/TESTKEY.SF",
-      "system/product/etc/sysconfig/wellbeing.xml",
-      "system/product/priv-app/Wellbeing/Wellbeing.apk"
+      "META-INF/TESTKEY.SF"
     ],
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
       "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/init/gapps.rc",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
       "system/product/overlay/GmsOverlay.apk",
-      "system/product/overlay/GmsSettingsProviderOverlay.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml"
+      "system/product/overlay/GmsSettingsProviderOverlay.apk"
     ],
-    "common_count": 21,
+    "common_count": 33,
     "size_diffs": [
       [
-        "META-INF/MANIFEST.MF",
-        2630,
-        4398,
-        40.20009095043201
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        12751,
+        4497,
+        64.73217786840247
       ],
       [
-        "system/product/etc/sysconfig/google.xml",
-        7261,
-        4885,
-        32.722765459303126
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        63145,
+        25198,
+        60.095019399794126
       ],
       [
         "system/product/priv-app/GmsCore/GmsCore.apk",
@@ -521,9 +484,9 @@
   {
     "version": "14.0.0",
     "arch": "arm64",
-    "pure_size_mb": 282.8461437225342,
+    "pure_size_mb": 489.6682596206665,
     "mtg_size_mb": 412.12245655059814,
-    "pure_total_files": 28,
+    "pure_total_files": 46,
     "mtg_total_files": 47,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -532,69 +495,27 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
-      "system/product/app/MarkupGoogle/MarkupGoogle.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/app/SpeechServicesByGoogle/SpeechServicesByGoogle.apk",
-      "system/product/app/talkback/talkback.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/init/gapps.rc",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/permissions/privapp-permissions-mtg.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
-      "system/product/priv-app/VelvetTitan/VelvetTitan.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
-      "system/system_ext/priv-app/SetupWizard/SetupWizard.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 26,
+    "common_count": 44,
     "size_diffs": [
       [
-        "system/product/overlay/GmsSettingsProviderOverlay.apk",
-        1488,
-        8530,
-        82.5556858147714
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        12670,
+        4500,
+        64.48303078137332
       ],
       [
-        "system/product/overlay/GmsSetupWizardOverlay.apk",
-        1733,
-        8530,
-        79.68347010550997
-      ],
-      [
-        "system/product/overlay/GmsSettingsOverlay.apk",
-        2238,
-        8530,
-        73.76318874560374
-      ],
-      [
-        "system/product/overlay/GmsOverlay.apk",
-        5518,
-        12626,
-        56.29653096784413
-      ],
-      [
-        "META-INF/MANIFEST.MF",
-        2975,
-        5496,
-        45.869723435225616
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        66387,
+        25782,
+        61.16408332956753
       ],
       [
         "system/product/priv-app/Velvet/Velvet.apk",
         463428658,
         277031022,
         40.22143058748861
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        8009,
-        6127,
-        23.498564115370208
       ],
       [
         "system/product/priv-app/GoogleRestore/GoogleRestore.apk",
@@ -608,9 +529,9 @@
   {
     "version": "14.0.0",
     "arch": "x86_64",
-    "pure_size_mb": 206.67426872253418,
+    "pure_size_mb": 213.2264804840088,
     "mtg_size_mb": 196.45402336120605,
-    "pure_total_files": 28,
+    "pure_total_files": 42,
     "mtg_total_files": 43,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -619,59 +540,21 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/init/gapps.rc",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/permissions/privapp-permissions-mtg.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
-      "system/system_ext/priv-app/SetupWizard/SetupWizard.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 26,
+    "common_count": 40,
     "size_diffs": [
       [
-        "system/product/overlay/GmsSettingsProviderOverlay.apk",
-        1488,
-        8530,
-        82.5556858147714
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        12521,
+        4500,
+        64.06037856401245
       ],
       [
-        "system/product/overlay/GmsSetupWizardOverlay.apk",
-        1733,
-        8530,
-        79.68347010550997
-      ],
-      [
-        "system/product/overlay/GmsSettingsOverlay.apk",
-        2238,
-        8530,
-        73.76318874560374
-      ],
-      [
-        "system/product/overlay/GmsOverlay.apk",
-        5518,
-        12626,
-        56.29653096784413
-      ],
-      [
-        "META-INF/MANIFEST.MF",
-        2975,
-        4998,
-        40.476190476190474
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        8009,
-        6127,
-        23.498564115370208
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        65359,
+        25782,
+        60.55325203873988
       ],
       [
         "system/product/priv-app/GmsCore/GmsCore.apk",
@@ -697,60 +580,45 @@
   {
     "version": "15.0.0",
     "arch": "arm64",
-    "pure_size_mb": 354.15047550201416,
+    "pure_size_mb": 602.8555526733398,
     "mtg_size_mb": 484.80996227264404,
-    "pure_total_files": 24,
+    "pure_total_files": 43,
     "mtg_total_files": 47,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
-      "META-INF/TESTKEY.SF"
+      "META-INF/TESTKEY.SF",
+      "system/product/etc/sysconfig/sysconfig_contextual_search.xml",
+      "system/product/priv-app/FamilyLinkParentalControls/FamilyLinkParentalControls.apk"
     ],
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
       "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/app/SpeechServicesByGoogle/SpeechServicesByGoogle.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/init/gapps.rc",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/permissions/privapp-permissions-mtg.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/etc/sysconfig/google_build.xml",
       "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
       "system/product/overlay/GmsOverlay.apk",
       "system/product/overlay/GmsSettingsOverlay.apk",
       "system/product/overlay/GmsSettingsProviderOverlay.apk",
-      "system/product/overlay/GmsSetupWizardOverlay.apk",
-      "system/product/priv-app/GoogleRestore/GoogleRestore.apk",
-      "system/product/priv-app/VelvetTitan/VelvetTitan.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
-      "system/system_ext/priv-app/SetupWizard/SetupWizard.apk"
+      "system/product/overlay/GmsSetupWizardOverlay.apk"
     ],
-    "common_count": 22,
+    "common_count": 39,
     "size_diffs": [
       [
-        "META-INF/MANIFEST.MF",
-        2498,
-        5502,
-        54.598327880770626
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        12815,
+        4500,
+        64.8849005072181
+      ],
+      [
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        72980,
+        28081,
+        61.522334886270215
       ],
       [
         "system/product/priv-app/Velvet/Velvet.apk",
         466757665,
         276600062,
         40.74011360906093
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        9098,
-        6127,
-        32.65552868762365
       ],
       [
         "system/product/priv-app/GmsCore/GmsCore.apk",
@@ -782,58 +650,45 @@
   {
     "version": "15.0.0",
     "arch": "x86_64",
-    "pure_size_mb": 235.9901418685913,
+    "pure_size_mb": 248.36689281463623,
     "mtg_size_mb": 198.43058586120605,
-    "pure_total_files": 22,
+    "pure_total_files": 39,
     "mtg_total_files": 43,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
-      "META-INF/TESTKEY.SF"
+      "META-INF/TESTKEY.SF",
+      "system/product/etc/sysconfig/sysconfig_contextual_search.xml",
+      "system/product/priv-app/FamilyLinkParentalControls/FamilyLinkParentalControls.apk"
     ],
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
       "META-INF/com/android/otacert",
-      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
-      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/product/etc/default-permissions/default-permissions-google.xml",
-      "system/product/etc/default-permissions/default-permissions-mtg.xml",
-      "system/product/etc/init/gapps.rc",
-      "system/product/etc/permissions/privapp-permissions-google-product.xml",
-      "system/product/etc/permissions/privapp-permissions-mtg.xml",
-      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
-      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
-      "system/product/etc/sysconfig/google_build.xml",
       "system/product/lib/libjni_latinimegoogle.so",
-      "system/product/lib64/libjni_latinimegoogle.so",
       "system/product/overlay/GmsOverlay.apk",
       "system/product/overlay/GmsSettingsOverlay.apk",
       "system/product/overlay/GmsSettingsProviderOverlay.apk",
-      "system/product/overlay/GmsSetupWizardOverlay.apk",
-      "system/product/priv-app/GoogleRestore/GoogleRestore.apk",
-      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
-      "system/system_ext/priv-app/SetupWizard/SetupWizard.apk"
+      "system/product/overlay/GmsSetupWizardOverlay.apk"
     ],
-    "common_count": 20,
+    "common_count": 35,
     "size_diffs": [
       [
-        "META-INF/MANIFEST.MF",
-        2260,
-        4998,
-        54.78191276510604
+        "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml",
+        12441,
+        4500,
+        63.829274174101755
+      ],
+      [
+        "system/product/etc/permissions/privapp-permissions-google-product.xml",
+        72328,
+        28081,
+        61.17547837628581
       ],
       [
         "system/product/priv-app/GmsCore/GmsCore.apk",
         239821225,
         119003080,
         50.378420425464846
-      ],
-      [
-        "system/product/etc/sysconfig/google.xml",
-        9098,
-        6127,
-        32.65552868762365
       ],
       [
         "system/product/priv-app/Phonesky/Phonesky.apk",
@@ -865,9 +720,9 @@
   {
     "version": "9.0.0",
     "arch": "arm64",
-    "pure_size_mb": 94.72861003875732,
+    "pure_size_mb": 116.35834407806396,
     "mtg_size_mb": 125.35281085968018,
-    "pure_total_files": 24,
+    "pure_total_files": 33,
     "mtg_total_files": 33,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -877,30 +732,21 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/app/MarkupGoogle/MarkupGoogle.apk",
-      "system/app/MarkupGoogle/lib/arm64/libsketchology_native.so",
-      "system/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/etc/default-permissions/default-permissions.xml",
-      "system/lib/libjni_latinimegoogle.so",
-      "system/lib64/libjni_latinimegoogle.so",
-      "system/priv-app/AndroidMigratePrebuilt/AndroidMigratePrebuilt.apk",
-      "system/priv-app/Phonesky/Phonesky.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 21,
+    "common_count": 30,
     "size_diffs": [
-      [
-        "system/framework/com.google.android.maps.jar",
-        200,
-        169386,
-        99.88192648743107
-      ],
       [
         "system/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
         679230,
         1638716,
         58.551085117860566
+      ],
+      [
+        "system/etc/permissions/privapp-permissions-google.xml",
+        60693,
+        26616,
+        56.1465078345114
       ],
       [
         "system/priv-app/Velvet/Velvet.apk",
@@ -938,9 +784,9 @@
   {
     "version": "9.0.0",
     "arch": "x86",
-    "pure_size_mb": 109.48250007629395,
+    "pure_size_mb": 114.01823997497559,
     "mtg_size_mb": 125.04296875,
-    "pure_total_files": 24,
+    "pure_total_files": 30,
     "mtg_total_files": 30,
     "only_in_pure": [
       "META-INF/TESTKEY.RSA",
@@ -950,27 +796,21 @@
     "only_in_mtg": [
       "META-INF/CERT.RSA",
       "META-INF/CERT.SF",
-      "META-INF/com/android/otacert",
-      "system/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
-      "system/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
-      "system/etc/default-permissions/default-permissions.xml",
-      "system/framework/com.google.android.dialer.support.jar",
-      "system/lib/libjni_latinimegoogle.so",
-      "system/priv-app/AndroidMigratePrebuilt/AndroidMigratePrebuilt.apk"
+      "META-INF/com/android/otacert"
     ],
-    "common_count": 21,
+    "common_count": 27,
     "size_diffs": [
-      [
-        "system/framework/com.google.android.maps.jar",
-        200,
-        169386,
-        99.88192648743107
-      ],
       [
         "system/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
         679167,
         1638716,
         58.55492959121654
+      ],
+      [
+        "system/etc/permissions/privapp-permissions-google.xml",
+        55470,
+        26616,
+        52.01730665224446
       ],
       [
         "system/priv-app/Velvet/Velvet.apk",
