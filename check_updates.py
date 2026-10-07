@@ -30,6 +30,7 @@ API_VERSION_MAP = {
 
 ARCH_MAP = {
     "x86_64": "x86_64",
+    "x86": "x86",
     "arm64-v8a": "arm64",
     "armeabi-v7a": "arm"
 }

@@ -1,0 +1,63 @@
+[
+  {
+    "version": "13.0.0",
+    "arch": "x86_64",
+    "pure_size_mb": 205.4943265914917,
+    "mtg_size_mb": 188.75814819335938,
+    "pure_total_files": 25,
+    "mtg_total_files": 38,
+    "only_in_pure": [
+      "META-INF/TESTKEY.RSA",
+      "META-INF/TESTKEY.SF",
+      "system/product/etc/sysconfig/wellbeing.xml",
+      "system/product/priv-app/Wellbeing/Wellbeing.apk"
+    ],
+    "only_in_mtg": [
+      "META-INF/CERT.RSA",
+      "META-INF/CERT.SF",
+      "META-INF/com/android/otacert",
+      "system/product/app/GoogleCalendarSyncAdapter/GoogleCalendarSyncAdapter.apk",
+      "system/product/app/GoogleContactsSyncAdapter/GoogleContactsSyncAdapter.apk",
+      "system/product/app/PrebuiltExchange3Google/PrebuiltExchange3Google.apk",
+      "system/product/etc/default-permissions/default-permissions-google.xml",
+      "system/product/etc/default-permissions/default-permissions-mtg.xml",
+      "system/product/etc/init/gapps.rc",
+      "system/product/etc/permissions/privapp-permissions-google-product.xml",
+      "system/product/etc/sysconfig/d2d_cable_migration_feature.xml",
+      "system/product/etc/sysconfig/google-hiddenapi-package-allowlist.xml",
+      "system/product/lib/libjni_latinimegoogle.so",
+      "system/product/lib64/libjni_latinimegoogle.so",
+      "system/product/overlay/GmsOverlay.apk",
+      "system/product/overlay/GmsSettingsProviderOverlay.apk",
+      "system/system_ext/etc/permissions/privapp-permissions-google-system-ext.xml"
+    ],
+    "common_count": 21,
+    "size_diffs": [
+      [
+        "META-INF/MANIFEST.MF",
+        2630,
+        4398,
+        40.20009095043201
+      ],
+      [
+        "system/product/etc/sysconfig/google.xml",
+        7261,
+        4885,
+        32.722765459303126
+      ],
+      [
+        "system/product/priv-app/GmsCore/GmsCore.apk",
+        144060779,
+        119003080,
+        17.393838332638754
+      ],
+      [
+        "system/system_ext/priv-app/SetupWizard/SetupWizard.apk",
+        9291925,
+        8608293,
+        7.357269887563664
+      ]
+    ],
+    "is_perfect_tree_match": false
+  }
+]

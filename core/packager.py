@@ -60,6 +60,9 @@ def fetch_target_file_list_for_branch(branch: str, arch: str) -> dict:
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
+                # Strip leading '-' (optional file marker in LineageOS extract-files syntax)
+                if line.startswith("-"):
+                    line = line[1:].strip()
                 # Strip hash
                 if "|" in line:
                     line = line.split("|")[0].strip()
