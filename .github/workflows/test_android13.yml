@@ -26,6 +26,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Cross-Check res/ + patch/ Against static/ (All 9 Versions)
+        run: python3 -m patch
+
       - name: Resolve Android 13.0.0 URLs from dl.google.com
         id: resolve
         run: |
@@ -168,3 +171,4 @@ jobs:
             gapps_comparison_report.md
           compression-level: 0
           retention-days: 7
+

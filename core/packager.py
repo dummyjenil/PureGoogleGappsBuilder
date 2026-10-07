@@ -18,15 +18,14 @@ from .constants import (
     KNOWN_PRIVILEGED_PERMISSIONS,
 )
 
+from patch import RES_ROOT, get_patched_version_dir
+
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_ROOT = os.path.join(REPO_ROOT, "static")
 
 
 def _get_version_static_dir(android_version: str) -> str:
-    ver_dir = os.path.join(STATIC_ROOT, android_version)
-    if os.path.isdir(ver_dir):
-        return ver_dir
-    return os.path.join(STATIC_ROOT, "13.0.0")
+    return get_patched_version_dir(android_version)
 
 
 def load_target_file_list_for_version(android_version: str, arch: str) -> dict:
@@ -162,8 +161,8 @@ def compile_local_overlays(android_version: str, sdk_version: int, target_overla
         print(f"    [!] Warning: aapt ({aapt_bin}) or android.jar ({android_jar}) not found. Skipping overlay compilation.")
         return
 
-    pk8_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.pk8")
-    pem_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.x509.pem")
+    pk8_file = os.path.join(RES_ROOT, "sign", "testkey.pk8")
+    pem_file = os.path.join(RES_ROOT, "sign", "testkey.x509.pem")
     can_sign = bool(apksigner_bin and os.path.isfile(pk8_file) and os.path.isfile(pem_file))
 
     for overlay_name in overlays_to_build:
@@ -639,10 +638,10 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     overlay_dir = os.path.join(system_dir, "product", "overlay")
     compile_local_overlays(android_version, sdk_version, overlay_dir)
 
-    # 6. Copy architecture-specific toybox binary from static/common/toybox/ (for Android 10+ / SDK >= 29)
+    # 6. Copy architecture-specific toybox binary from res/toybox/ (for Android 10+ / SDK >= 29)
     if sdk_version >= 29:
         toybox_name = ARCH_TO_TOYBOX.get(arch, "toybox-x86_64")
-        toybox_src = os.path.join(STATIC_ROOT, "common", "toybox", toybox_name)
+        toybox_src = os.path.join(RES_ROOT, "toybox", toybox_name)
         toybox_dest = os.path.join(target_pkg_dir, "toybox")
         if os.path.isfile(toybox_src):
             shutil.copy2(toybox_src, toybox_dest)
@@ -650,7 +649,7 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
             print(f"    [✓] Copied local {toybox_name} -> toybox ({os.path.getsize(toybox_dest)/1024:.1f} KB)")
 
     # 7. Add Recovery Installer & Addon.d Survival Scripts
-    print("[*] Setting up update-binary and addon.d scripts from local static/...")
+    print("[*] Setting up update-binary and addon.d scripts from patched res/...")
     meta_inf_dir = os.path.join(target_pkg_dir, "META-INF", "com", "google", "android")
     os.makedirs(meta_inf_dir, exist_ok=True)
 
@@ -659,7 +658,7 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     if os.path.isfile(update_bin_src):
         shutil.copy2(update_bin_src, update_bin_dest)
         os.chmod(update_bin_dest, 0o755)
-        print(f"    [✓] Copied local static/{android_version}/update-binary")
+        print(f"    [✓] Copied patched {android_version}/update-binary")
     else:
         with open(update_bin_dest, "w", newline="\n") as f:
             f.write("#!/sbin/sh\n# Fallback\n")
@@ -695,8 +694,8 @@ def create_flashable_zip(source_dir: str, output_zip_path: str):
     if os.path.exists(output_zip_path):
         os.remove(output_zip_path)
 
-    pk8_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.pk8")
-    pem_file = os.path.join(STATIC_ROOT, "common", "sign", "testkey.x509.pem")
+    pk8_file = os.path.join(RES_ROOT, "sign", "testkey.pk8")
+    pem_file = os.path.join(RES_ROOT, "sign", "testkey.x509.pem")
 
     otacert_path = os.path.join(source_dir, "META-INF", "com", "android", "otacert")
     if os.path.isfile(pem_file):
