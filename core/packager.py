@@ -553,6 +553,15 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
         "markupgoogle_v2.apk": ["markupgoogle_v2.apk", "markupgoogle.apk"],
         "markupgoogle.apk": ["markupgoogle.apk", "markupgoogle_v2.apk"],
         "velvettitan.apk": ["velvettitan.apk", "velvet.apk"],
+        "googlecalendarsyncadapter.apk": ["googlecalendarsyncadapter.apk", "calendargoogleprebuilt.apk"],
+        "googlecontactssyncadapter.apk": ["googlecontactssyncadapter.apk", "googlecontacts.apk"],
+        "prebuiltexchange3google.apk": ["prebuiltexchange3google.apk", "exchange3google.apk", "prebuiltgmail.apk"],
+    }
+
+    PACKAGE_FALLBACK_EQUIVALENTS = {
+        "com.google.android.syncadapters.calendar": ["com.google.android.syncadapters.calendar", "com.google.android.calendar"],
+        "com.google.android.syncadapters.contacts": ["com.google.android.syncadapters.contacts", "com.google.android.contacts"],
+        "com.google.android.gm.exchange": ["com.google.android.gm.exchange", "com.google.android.gm"],
     }
 
     # 2. Match and copy files according to target mappings
@@ -578,9 +587,12 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
             # Package-Name Fallback Lookup inside Google SDK Image
             if not candidates and base_fname.endswith(".apk"):
                 expected_pkg = APK_PACKAGE_MAP.get(base_fname)
-                if expected_pkg and expected_pkg in extracted_pkg_map:
-                    candidates = extracted_pkg_map[expected_pkg]
-                    match_method = f"package-fallback:{expected_pkg}"
+                if expected_pkg:
+                    for cand_pkg in PACKAGE_FALLBACK_EQUIVALENTS.get(expected_pkg, [expected_pkg]):
+                        if cand_pkg in extracted_pkg_map:
+                            candidates = extracted_pkg_map[cand_pkg]
+                            match_method = f"package-fallback:{cand_pkg}"
+                            break
 
             if candidates:
                 part_hint = dst_rel.split("/")[0].lower() if "/" in dst_rel else ""

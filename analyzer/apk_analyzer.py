@@ -225,7 +225,12 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict, expected_pkg: str = "
                             res = parse_axml_version(axml)
                             if res:
                                 pkg = res.get("package", "")
-                                if not expected_pkg or pkg == expected_pkg:
+                                equiv = {
+                                    "com.google.android.syncadapters.calendar": {"com.google.android.syncadapters.calendar", "com.google.android.calendar"},
+                                    "com.google.android.syncadapters.contacts": {"com.google.android.syncadapters.contacts", "com.google.android.contacts"},
+                                    "com.google.android.gm.exchange": {"com.google.android.gm.exchange", "com.google.android.gm"},
+                                }.get(expected_pkg, {expected_pkg} if expected_pkg else set())
+                                if not equiv or pkg in equiv:
                                     return res
                                 if not fallback_res:
                                     fallback_res = res

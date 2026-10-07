@@ -51,6 +51,10 @@ APK_PACKAGE_MAP = {
     "wellbeing.apk": "com.google.android.apps.wellbeing",
     "wellbeingprebuilt.apk": "com.google.android.apps.wellbeing",
     "talkback.apk": "com.google.android.marvin.talkback",
+    "calendargoogleprebuilt.apk": "com.google.android.calendar",
+    "googlecontacts.apk": "com.google.android.contacts",
+    "prebuiltgmail.apk": "com.google.android.gm",
+    "googleextshared.apk": "com.google.android.ext.shared",
 }
 
 ARCH_TO_TOYBOX = {
