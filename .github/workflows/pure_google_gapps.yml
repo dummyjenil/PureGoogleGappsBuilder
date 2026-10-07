@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 env:
   PYTHONUNBUFFERED: "1"
@@ -80,7 +81,7 @@ jobs:
           echo "revisions_b64=$B64_STATE" >> "$GITHUB_OUTPUT"
 
   # =========================================================================
-  # 2. Extract & Build in Parallel -> Upload Directly to GitHub Release
+  # 2. Extract & Build in Parallel -> Upload to Release + Analyze Local ZIP
   # =========================================================================
   build-gapps:
     name: Build Android ${{ matrix.androidv }} (${{ matrix.arch }})
@@ -118,7 +119,7 @@ jobs:
             --url "${{ matrix.url }}" \
             --out-dir "out_packages"
 
-      - name: Upload Package Directly to GitHub Release (Zero Artifact Storage)
+      - name: Upload Package Directly to GitHub Release (Zero ZIP Artifact Storage)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -134,11 +135,32 @@ jobs:
           done
           exit 1
 
+      - name: Generate Matrix Analysis Fragment (Deep XML & APK Versions)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ZIP_FILE=$(ls out_packages/GoogleGapps-*.zip | head -n 1)
+          python3 analyze_all_releases.py \
+            --version "${{ matrix.androidv }}" \
+            --arch "${{ matrix.arch }}" \
+            --local-zip "$ZIP_FILE" \
+            --save-fragment "out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json" || true
+
+      - name: Upload Tiny Matrix Report Fragment
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: report-fragment-${{ matrix.androidv }}-${{ matrix.arch }}
+          path: out_packages/report-${{ matrix.androidv }}-${{ matrix.arch }}.json
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: ignore
+
   # =========================================================================
-  # 3. Finalize Release State & Generate Analysis Report Artifact
+  # 3. Finalize Release State & Publish Merged Analysis Report Artifact
   # =========================================================================
   publish-release:
-    name: Finalize Release & Generate Analysis Report
+    name: Finalize Release & Publish Analysis Report
     needs: [check-for-updates, build-gapps]
     runs-on: ubuntu-24.04
     steps:
@@ -156,20 +178,36 @@ jobs:
             echo "[✓] Updated latest_revisions.json in 'release'."
           fi
 
-      - name: Generate GApps Comparison Report (vs MindTheGapps)
+      - name: Download Matrix Report Fragments
+        if: always()
+        uses: actions/download-artifact@v8
+        with:
+          pattern: report-fragment-*
+          path: report_fragments
+          merge-multiple: true
+
+      - name: Clean Up Temporary Fragment Artifacts
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python3 analyze_all_releases.py || true
-          if [ -f "gapps_comparison_report.txt" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-            echo "### 🔍 GApps Release Comparison Report" >> "$GITHUB_STEP_SUMMARY"
-            echo '```text' >> "$GITHUB_STEP_SUMMARY"
-            cat gapps_comparison_report.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          ART_IDS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '.artifacts[] | select(.name | startswith("report-fragment-")) | .id' 2>/dev/null || true)
+          for id in $ART_IDS; do
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" >/dev/null 2>&1 || true
+          done
+          echo "[✓] Cleaned up temporary matrix report fragments."
+
+      - name: Merge Matrix Reports & Publish Final Comparison Tables
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 analyze_all_releases.py --merge-fragments report_fragments || true
+          if [ -f "gapps_comparison_report.md" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            cat gapps_comparison_report.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload Analysis Report Artifact (Only Artifact in Workflow)
+      - name: Upload Final Analysis Report Artifact (Not in Release)
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -177,8 +215,10 @@ jobs:
           path: |
             gapps_comparison_report.json
             gapps_comparison_report.txt
+            gapps_comparison_report.md
           compression-level: 0
           retention-days: 30
           if-no-files-found: warn
+
 
 
