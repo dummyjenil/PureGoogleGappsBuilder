@@ -399,6 +399,108 @@ def _index_extracted_apks_by_package(extracted_dir: str) -> dict:
     return pkg_to_apks
 
 
+def fetch_missing_apks_via_github_range(
+    android_version: str,
+    arch: str,
+    still_missing: list,
+    system_dir: str,
+    included_files: list,
+):
+    """
+    For standalone AOSP sync adapters (e.g. GoogleCalendarSyncAdapter, GoogleContactsSyncAdapter,
+    PrebuiltExchange3Google) that are absent from Google's Emulator SDK images, extracts only their
+    compressed byte slices on-the-fly via HTTP Range from GitHub release archives and verifies
+    their AndroidManifest package name against APK_PACKAGE_MAP.
+    """
+    import json
+    import io
+    import urllib.request
+    from analyzer.zip_inspector import RemoteZipInspector
+    from analyzer.apk_analyzer import parse_axml_version
+
+    api_url = "https://api.github.com/repos/s1204IT/MindTheGappsBuilder/releases?per_page=100"
+    headers = {"User-Agent": "Mozilla/5.0 (PureGoogleGappsBuilder/2.0)"}
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    zip_url = None
+    search_versions = [android_version]
+    if android_version == "16.0.0":
+        search_versions.append("15.0.0")
+
+    try:
+        req = urllib.request.Request(api_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            releases = json.loads(resp.read().decode("utf-8"))
+        for target_ver in search_versions:
+            prefix = f"MindTheGapps-{target_ver}-{arch}-"
+            for rel in releases:
+                for asset in rel.get("assets", []):
+                    name = asset.get("name", "")
+                    if name.startswith(prefix) and name.endswith(".zip") and not name.endswith(".sum"):
+                        zip_url = asset.get("browser_download_url", "")
+                        break
+                if zip_url:
+                    break
+            if zip_url:
+                break
+    except Exception as e:
+        print(f"    [!] Warning: Could not query release index for range fallback ({e})")
+        return
+
+    if not zip_url:
+        return
+
+    remote_info, err = RemoteZipInspector.inspect(zip_url)
+    if not remote_info or err:
+        return
+
+    remote_files = remote_info.get("files", {})
+    for dst_rel, bname, expected_pkg in still_missing:
+        if not bname.endswith(".apk"):
+            continue
+        zip_key = f"system/{dst_rel}"
+        entry_meta = remote_files.get(zip_key)
+        if not entry_meta:
+            for rpath, rmeta in remote_files.items():
+                if os.path.basename(rpath).lower() == bname:
+                    zip_key = rpath
+                    entry_meta = rmeta
+                    break
+        if not entry_meta:
+            continue
+
+        try:
+            apk_bytes = RemoteZipInspector.read_entry_bytes(entry_meta, zip_key)
+            if not apk_bytes:
+                continue
+            pkg_name = expected_pkg
+            vname = ""
+            vcode = ""
+            try:
+                with zipfile.ZipFile(io.BytesIO(apk_bytes), "r") as zf:
+                    axml = zf.read("AndroidManifest.xml")
+                meta = parse_axml_version(axml)
+                pkg_name = meta.get("package") or expected_pkg
+                vname = meta.get("versionName", "")
+                vcode = meta.get("versionCode", "")
+            except Exception:
+                pass
+
+            dst_path = os.path.join(system_dir, dst_rel)
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            with open(dst_path, "wb") as f:
+                f.write(apk_bytes)
+            included_files.append(dst_rel)
+            print(
+                f"    [+] Included [range-fallback:{pkg_name}]: {dst_rel} "
+                f"({len(apk_bytes)/1024:.1f} KB, v={vname}, code={vcode})"
+            )
+        except Exception as e:
+            print(f"    [!] Failed range-fallback for {dst_rel}: {e}")
+
+
 def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_version: str, arch: str):
     """
     Structures genuine GApps files into MindTheGapps-identical hierarchy.
@@ -497,16 +599,26 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     # 3. Copy local non-APK static proprietary XML permissions, sysconfigs & arch libs
     copy_local_static_proprietary_files(android_version, arch, system_dir)
 
-    # Log any targets that were neither in Google SDK image nor satisfied by static non-APK files
+    # Resolve any standalone sync-adapter APKs absent from Google SDK image via HTTP Range
     still_missing = [
         (dst_rel, bname, pkg)
         for (dst_rel, bname, pkg) in missing_targets
         if not os.path.exists(os.path.join(system_dir, dst_rel))
     ]
     if still_missing:
-        print(f"    [!] Notice: {len(still_missing)} target(s) not present in Google SDK image:")
-        for dst_rel, bname, pkg in still_missing:
-            print(f"        - MISSING: {dst_rel} (filename={bname}, expected_pkg={pkg})")
+        print(f"    [*] {len(still_missing)} standalone target(s) absent from Google SDK image; resolving via HTTP Range...")
+        fetch_missing_apks_via_github_range(
+            android_version, arch, still_missing, system_dir, included_files
+        )
+        unresolved = [
+            (dst_rel, bname, pkg)
+            for (dst_rel, bname, pkg) in still_missing
+            if not os.path.exists(os.path.join(system_dir, dst_rel))
+        ]
+        if unresolved:
+            print(f"    [!] Notice: {len(unresolved)} target(s) still unresolved:")
+            for dst_rel, bname, pkg in unresolved:
+                print(f"        - MISSING: {dst_rel} (filename={bname}, expected_pkg={pkg})")
 
     # 4. Auto-synchronize privapp-permissions for all extracted APKs to prevent bootloops
     sync_privapp_permissions(system_dir, sdk_version)

@@ -153,7 +153,7 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict, expected_pkg: str = "
 
     fallback_res = {}
     try:
-        max_stream = min(csize + 512, 32 * 1024 * 1024)
+        max_stream = csize + 512
         req = urllib.request.Request(
             url,
             headers={
@@ -164,9 +164,9 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict, expected_pkg: str = "
         dobj = zlib.decompressobj(-zlib.MAX_WBITS) if meth == 8 else None
         buf = b""
         header_skipped = False
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             while True:
-                chunk = resp.read(65536)
+                chunk = resp.read(262144)
                 if not chunk:
                     break
                 if not header_skipped:
@@ -183,6 +183,7 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict, expected_pkg: str = "
                     buf += dobj.decompress(chunk) if dobj else chunk
 
                 idx = 0
+                keep_from = len(buf)
                 while True:
                     pos = buf.find(b"AndroidManifest.xml", idx)
                     if pos == -1:
@@ -204,33 +205,37 @@ def _extract_axml_from_remote_zip_stream(entry_meta: dict, expected_pkg: str = "
                         if imeth == 0 and iusize == 0 and len(buf) >= dstart + 8:
                             iusize = struct.unpack("<I", buf[dstart + 4 : dstart + 8])[0]
                             icsize = iusize
-                        need = icsize if icsize > 0 else max(iusize, 65536)
-                        if len(buf) >= dstart + need or len(chunk) < 65536:
-                            raw_axml = (
-                                buf[dstart : dstart + icsize]
-                                if icsize > 0
-                                else buf[dstart:]
-                            )
-                            try:
-                                axml = (
+                        need = icsize if icsize > 0 else max(iusize, 131072)
+                        if len(buf) < dstart + need and len(chunk) == 262144:
+                            keep_from = min(keep_from, pos - 30)
+                            break
+                        raw_axml = (
+                            buf[dstart : dstart + icsize]
+                            if icsize > 0
+                            else buf[dstart : dstart + 131072]
+                        )
+                        try:
+                            axml = (
+                                raw_axml
+                                if imeth == 0
+                                else zlib.decompressobj(-zlib.MAX_WBITS).decompress(
                                     raw_axml
-                                    if imeth == 0
-                                    else zlib.decompressobj(-zlib.MAX_WBITS).decompress(
-                                        raw_axml
-                                    )
                                 )
-                                res = parse_axml_version(axml)
-                                if res:
-                                    pkg = res.get("package", "")
-                                    if not expected_pkg or pkg == expected_pkg:
-                                        return res
-                                    if not fallback_res:
-                                        fallback_res = res
-                            except Exception:
-                                pass
+                            )
+                            res = parse_axml_version(axml)
+                            if res:
+                                pkg = res.get("package", "")
+                                if not expected_pkg or pkg == expected_pkg:
+                                    return res
+                                if not fallback_res:
+                                    fallback_res = res
+                        except Exception:
+                            pass
                     idx = pos + 19
-                if len(buf) > 4 * 1024 * 1024 and b"AndroidManifest.xml" not in buf:
-                    buf = buf[-131072:]
+                if keep_from < len(buf):
+                    buf = buf[keep_from:]
+                elif len(buf) > 131072:
+                    buf = buf[-65536:]
     except Exception:
         pass
     return fallback_res
