@@ -36,7 +36,7 @@ jobs:
       update_count: ${{ steps.check.outputs.update_count }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Fetch previous state from GitHub Release
         env:
@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload State Artifact
         if: steps.check.outputs.has_updates == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: google-revisions-state
           path: new_state.json
@@ -85,7 +85,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install High-Speed Extraction Utilities (aria2, 7z, erofs, simg2img)
         run: |
@@ -108,7 +108,7 @@ jobs:
             --out-dir "out_packages"
 
       - name: Upload Package Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GoogleGapps-${{ matrix.androidv }}-${{ matrix.arch }}
           path: out_packages/*.zip
@@ -125,16 +125,16 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download Built Packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release_packages
           merge-multiple: true
 
       - name: Download State Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: google-revisions-state
           path: .
