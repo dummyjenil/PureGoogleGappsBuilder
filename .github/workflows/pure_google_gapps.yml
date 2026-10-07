@@ -95,7 +95,9 @@ jobs:
             unzip \
             android-sdk-libsparse-utils \
             erofs-utils \
-            e2fsprogs
+            e2fsprogs \
+            aapt \
+            apksigner
 
       - name: Extract & Package Pure Google GApps
         run: |

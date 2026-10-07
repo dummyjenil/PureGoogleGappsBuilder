@@ -25,10 +25,10 @@ GITLAB_RAW_BASE = "https://gitlab.com/MindTheGapps/vendor_gapps/-/raw"
 GITLAB_API_BASE = "https://gitlab.com/api/v4/projects/MindTheGapps%2Fvendor_gapps/repository"
 
 
-def fetch_url_bytes(url: str) -> bytes:
-    """Fetch raw bytes from a URL with browser User-Agent"""
+def fetch_url_bytes(url: str, timeout: int = 15) -> bytes:
+    """Fetch raw bytes from a URL with browser User-Agent and timeout"""
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (PureGappsBuilder/1.0)"})
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
 
 
@@ -78,10 +78,49 @@ def fetch_target_file_list_for_branch(branch: str, arch: str) -> dict:
     return file_mappings
 
 
+def find_android_jar(sdk_version: int):
+    """Locates android.jar fast without expensive directory globbing"""
+    android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or "/usr/local/lib/android/sdk"
+    user_sdk = os.path.expanduser("~/Android/Sdk")
+    
+    candidates = [
+        f"{android_home}/platforms/android-{sdk_version}/android.jar",
+        f"{android_home}/platforms/android-35/android.jar",
+        f"{android_home}/platforms/android-34/android.jar",
+        f"{android_home}/platforms/android-33/android.jar",
+        f"{user_sdk}/platforms/android-{sdk_version}/android.jar",
+        f"{user_sdk}/platforms/android-35/android.jar",
+        f"{user_sdk}/platforms/android-34/android.jar",
+        f"/usr/local/lib/android/sdk/platforms/android-{sdk_version}/android.jar",
+        f"/usr/local/lib/android/sdk/platforms/android-35/android.jar",
+        f"/usr/local/lib/android/sdk/platforms/android-34/android.jar",
+        f"/usr/lib/android-sdk/platforms/android-{sdk_version}/android.jar",
+        f"/usr/lib/android-sdk/platforms/android-34/android.jar"
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return None
+
+
+def find_aapt_binary():
+    """Finds aapt binary from PATH or Android build-tools"""
+    w = shutil.which("aapt")
+    if w:
+        return w
+    android_home = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or "/usr/local/lib/android/sdk"
+    btd = os.path.join(android_home, "build-tools")
+    if os.path.isdir(btd):
+        for ver in sorted(os.listdir(btd), reverse=True):
+            cand = os.path.join(btd, ver, "aapt")
+            if os.path.isfile(cand) and os.access(cand, os.X_OK):
+                return cand
+    return None
+
+
 def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir: str):
     """
-    Compiles Runtime Resource Overlays (RROs) for Android 12+ using aapt/aapt2
-    or fetches them dynamically.
+    Compiles Runtime Resource Overlays (RROs) for Android 12+ using aapt
     """
     if sdk_version < 31:
         return  # Overlays are only present in Android 12 (API 31)+
@@ -93,7 +132,7 @@ def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir:
     tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay&per_page=100"
     overlays_to_build = []
     try:
-        data = json.loads(fetch_url_bytes(tree_url).decode("utf-8"))
+        data = json.loads(fetch_url_bytes(tree_url, timeout=10).decode("utf-8"))
         overlays_to_build = [x["name"] for x in data if x.get("type") == "tree"]
     except Exception:
         # Fallback standard overlays for Android 12+
@@ -101,28 +140,12 @@ def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir:
         if sdk_version >= 33:
             overlays_to_build.extend(["GmsSettingsOverlay", "GmsSetupWizardOverlay"])
 
-    # Locate android.jar for aapt compilation
-    android_jar = None
-    candidate_jars = [
-        f"/home/jenil-sheth/Android/Sdk/platforms/android-{sdk_version}/android.jar",
-        f"/home/jenil-sheth/Android/Sdk/platforms/android-34/android.jar",
-        f"/home/jenil-sheth/Android/Sdk/platforms/android-35/android.jar",
-        f"/home/jenil-sheth/Android/Sdk/platforms/android-36/android.jar",
-        os.path.expanduser(f"~/Android/Sdk/platforms/android-{sdk_version}/android.jar"),
-        f"/usr/lib/android-sdk/platforms/android-{sdk_version}/android.jar"
-    ]
-    for c in candidate_jars:
-        if os.path.exists(c):
-            android_jar = c
-            break
+    android_jar = find_android_jar(sdk_version)
+    aapt_bin = find_aapt_binary()
 
-    # If no local android.jar, search anywhere
-    if not android_jar:
-        found = glob_search_android_jar()
-        if found:
-            android_jar = found
-
-    has_aapt = shutil.which("aapt") is not None
+    if not aapt_bin or not android_jar:
+        print(f"    [!] Warning: aapt ({aapt_bin}) or android.jar ({android_jar}) not found. Skipping overlay compilation.")
+        return
 
     for overlay_name in overlays_to_build:
         out_apk = os.path.join(target_overlay_dir, f"{overlay_name}.apk")
@@ -131,37 +154,29 @@ def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir:
 
         base_overlay_url = f"{GITLAB_RAW_BASE}/{branch}/overlay/{overlay_name}"
         try:
-            if has_aapt and android_jar:
-                with tempfile.TemporaryDirectory() as td:
-                    manifest_data = fetch_url_bytes(f"{base_overlay_url}/AndroidManifest.xml")
-                    manifest_file = os.path.join(td, "AndroidManifest.xml")
-                    with open(manifest_file, "wb") as f:
-                        f.write(manifest_data)
+            with tempfile.TemporaryDirectory() as td:
+                manifest_data = fetch_url_bytes(f"{base_overlay_url}/AndroidManifest.xml", timeout=10)
+                manifest_file = os.path.join(td, "AndroidManifest.xml")
+                with open(manifest_file, "wb") as f:
+                    f.write(manifest_data)
 
-                    res_val_dir = os.path.join(td, "res", "values")
-                    os.makedirs(res_val_dir, exist_ok=True)
+                res_val_dir = os.path.join(td, "res", "values")
+                os.makedirs(res_val_dir, exist_ok=True)
 
-                    # List value XMLs
-                    vals_tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay/{overlay_name}/res/values"
-                    vdata = json.loads(fetch_url_bytes(vals_tree_url).decode("utf-8"))
-                    for vitem in vdata:
-                        vname = vitem["name"]
-                        vbytes = fetch_url_bytes(f"{base_overlay_url}/res/values/{vname}")
-                        with open(os.path.join(res_val_dir, vname), "wb") as vf:
-                            vf.write(vbytes)
+                # List value XMLs
+                vals_tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=overlay/{overlay_name}/res/values"
+                vdata = json.loads(fetch_url_bytes(vals_tree_url, timeout=10).decode("utf-8"))
+                for vitem in vdata:
+                    vname = vitem["name"]
+                    vbytes = fetch_url_bytes(f"{base_overlay_url}/res/values/{vname}", timeout=10)
+                    with open(os.path.join(res_val_dir, vname), "wb") as vf:
+                        vf.write(vbytes)
 
-                    cmd = ["aapt", "package", "-M", manifest_file, "-S", os.path.join(td, "res"), "-I", android_jar, "-F", out_apk]
-                    subprocess.run(cmd, check=True, capture_output=True)
-                    print(f"    [✓] Compiled Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
+                cmd = [aapt_bin, "package", "-M", manifest_file, "-S", os.path.join(td, "res"), "-I", android_jar, "-F", out_apk]
+                subprocess.run(cmd, check=True, capture_output=True, timeout=15)
+                print(f"    [✓] Compiled Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
         except Exception as e:
             print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
-
-
-def glob_search_android_jar():
-    import glob
-    candidates = glob.glob("/home/**/platforms/android-*/android.jar", recursive=True) + \
-                 glob.glob("/usr/**/platforms/android-*/android.jar", recursive=True)
-    return candidates[0] if candidates else None
 
 
 def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_version: str, arch: str):
@@ -235,7 +250,6 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
                         break
 
             if candidates:
-                # Prefer candidate that matches target partition name (e.g. product vs system_ext)
                 part_hint = dst_rel.split("/")[0].lower() if "/" in dst_rel else ""
                 preferred = [c for c in candidates if part_hint in c.lower()]
                 matched_src = preferred[0] if preferred else candidates[0]
@@ -256,7 +270,7 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     toybox_dest = os.path.join(target_pkg_dir, "toybox")
     print(f"[*] Downloading {toybox_name} for Recovery installation environment...")
     try:
-        tbytes = fetch_url_bytes(toybox_url)
+        tbytes = fetch_url_bytes(toybox_url, timeout=15)
         with open(toybox_dest, "wb") as f:
             f.write(tbytes)
         os.chmod(toybox_dest, 0o755)
@@ -272,7 +286,7 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     update_bin_dest = os.path.join(meta_inf_dir, "update-binary")
     update_bin_url = f"{GITLAB_RAW_BASE}/{branch}/build/meta/com/google/android/update-binary"
     try:
-        ubytes = fetch_url_bytes(update_bin_url)
+        ubytes = fetch_url_bytes(update_bin_url, timeout=15)
         with open(update_bin_dest, "wb") as f:
             f.write(ubytes)
         os.chmod(update_bin_dest, 0o755)
@@ -343,12 +357,12 @@ def create_flashable_zip(source_dir: str, output_zip_path: str):
                 pem_file = os.path.join(td, "testkey.x509.pem")
 
                 with open(pk8_file, "wb") as f:
-                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.pk8"))
+                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.pk8", timeout=10))
                 with open(pem_file, "wb") as f:
-                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.x509.pem"))
+                    f.write(fetch_url_bytes(f"{GITLAB_RAW_BASE}/upsilon/build/sign/testkey.x509.pem", timeout=10))
 
                 cmd = ["apksigner", "sign", "--key", pk8_file, "--cert", pem_file, "--min-sdk-version", "28", output_zip_path]
-                subprocess.run(cmd, check=True, capture_output=True)
+                subprocess.run(cmd, check=True, capture_output=True, timeout=30)
                 print("    [✓] ZIP signed successfully with AOSP testkey (apksigner)")
         except Exception as e:
             print(f"    [!] Warning: Failed to sign ZIP: {e}")
