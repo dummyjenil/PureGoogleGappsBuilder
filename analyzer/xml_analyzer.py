@@ -144,3 +144,4 @@ def compare_xml_files(pure_info: dict, mtg_info: dict) -> list:
         })
 
     return xml_reports
+

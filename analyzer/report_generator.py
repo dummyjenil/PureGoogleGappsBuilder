@@ -188,3 +188,4 @@ def generate_reports(
     print("\n" + "=" * 95)
     print(f"🎉 Reports saved to:\n   - {os.path.abspath(json_path)}\n   - {os.path.abspath(txt_path)}\n   - {os.path.abspath(md_path)}")
     print("=" * 95 + "\n")
+

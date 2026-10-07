@@ -193,3 +193,4 @@ class RemoteZipInspector:
         if meth == 0:
             return comp
         return zlib.decompress(comp, -zlib.MAX_WBITS)
+
