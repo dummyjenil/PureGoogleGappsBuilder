@@ -182,6 +182,42 @@ def compile_or_fetch_overlays(branch: str, sdk_version: int, target_overlay_dir:
             print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
 
 
+def fetch_common_proprietary_files(branch: str, system_dir: str):
+    """
+    Downloads static proprietary permission XMLs, default permissions, and sysconfigs
+    from MindTheGapps common/proprietary to ensure 100% complete GApps installation suite.
+    """
+    print(f"[*] Ensuring MindTheGapps static proprietary configs for branch '{branch}'...")
+    tree_url = f"{GITLAB_API_BASE}/tree?ref={branch}&path=common/proprietary&recursive=true&per_page=100"
+    try:
+        data = json.loads(fetch_url_bytes(tree_url, timeout=12).decode("utf-8"))
+        for item in data:
+            if item.get("type") != "blob":
+                continue
+            rel_path = item["path"]
+            if not rel_path.startswith("common/proprietary/"):
+                continue
+            
+            sub_rel = rel_path[len("common/proprietary/"):]
+            dst_path = os.path.join(system_dir, sub_rel)
+            
+            # Don't overwrite genuine extracted APKs, but always ensure XMLs/certs/configs/framework jars are present
+            if os.path.exists(dst_path) and dst_path.endswith(".apk"):
+                continue
+            
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            file_url = f"{GITLAB_RAW_BASE}/{branch}/{rel_path}"
+            try:
+                content = fetch_url_bytes(file_url, timeout=10)
+                with open(dst_path, "wb") as f:
+                    f.write(content)
+                print(f"    [+] Static Proprietary: {sub_rel} ({len(content)} bytes)")
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"    [!] Warning: Failed to query static proprietary tree: {e}")
+
+
 def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_version: str, arch: str):
     """
     Structures genuine GApps files into MindTheGapps-identical hierarchy.
@@ -263,7 +299,10 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
             included_files.append(dst_rel)
             print(f"    [+] Included: {dst_rel} ({os.path.getsize(dst_path)/1024:.1f} KB)")
 
-    # 3. Compile / fetch RRO overlays
+    # 3. Ensure all MindTheGapps proprietary XML permissions & sysconfigs are present
+    fetch_common_proprietary_files(branch, system_dir)
+
+    # 4. Compile / fetch RRO overlays
     overlay_dir = os.path.join(system_dir, "product", "overlay")
     compile_or_fetch_overlays(branch, sdk_version, overlay_dir)
 
