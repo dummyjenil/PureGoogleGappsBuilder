@@ -117,7 +117,6 @@ jobs:
             erofs-utils \
             e2fsprogs \
             aapt \
-            aapt2 \
             zipalign \
             apksigner \
             android-sdk-platform-23
