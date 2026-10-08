@@ -15,57 +15,84 @@ class RemoteZipInspector:
     """Inspects local or remote ZIP archives and extracts specific entries on demand."""
 
     @staticmethod
-    def fetch_range(url: str, start: int, end: int, timeout: int = 15):
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (FastGappsComparator/2.0)",
-                "Range": f"bytes={start}-{end}",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return resp.read(), resp.geturl()
+    def fetch_range(url: str, start: int, end: int, timeout: int = 20):
+        import time
+        last_err = None
+        for attempt in range(4):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (FastGappsComparator/2.0)",
+                        "Range": f"bytes={start}-{end}",
+                    },
+                )
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    return resp.read(), resp.geturl()
+            except Exception as e:
+                last_err = e
+                if attempt < 3:
+                    time.sleep(1.5 * (attempt + 1))
+        raise last_err
 
     @staticmethod
-    def inspect(url: str, timeout: int = 15):
+    def inspect(url: str, timeout: int = 20):
         """Reads remote ZIP Central Directory via HTTP Range (~64KB-512KB)."""
-        try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": "Mozilla/5.0 (FastGappsComparator/2.0)"}
-            )
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                final_url = resp.geturl()
-                content_len = resp.headers.get("Content-Length")
-                total_size = int(content_len) if content_len else 0
-
-            if total_size == 0:
+        import time
+        last_err = None
+        for attempt in range(4):
+            try:
+                total_size = 0
+                final_url = url
                 r_req = urllib.request.Request(
                     url,
-                    headers={"User-Agent": "Mozilla/5.0", "Range": "bytes=0-0"},
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (FastGappsComparator/2.0)",
+                        "Range": "bytes=0-0",
+                    },
                 )
                 with urllib.request.urlopen(r_req, timeout=timeout) as resp:
                     final_url = resp.geturl()
                     cr = resp.headers.get("Content-Range")
-                    total_size = int(cr.split("/")[-1]) if cr and "/" in cr else 0
+                    if cr and "/" in cr:
+                        total_size = int(cr.split("/")[-1])
+                    else:
+                        content_len = resp.headers.get("Content-Length")
+                        total_size = int(content_len) if content_len else 0
 
-            if total_size == 0:
-                return None, "Unable to determine remote file size"
+                if total_size == 0:
+                    req = urllib.request.Request(
+                        url, headers={"User-Agent": "Mozilla/5.0 (FastGappsComparator/2.0)"}
+                    )
+                    with urllib.request.urlopen(req, timeout=timeout) as resp:
+                        final_url = resp.geturl()
+                        content_len = resp.headers.get("Content-Length")
+                        total_size = int(content_len) if content_len else 0
 
-            tail_len = min(total_size, 512 * 1024)
-            tail_data, _ = RemoteZipInspector.fetch_range(
-                final_url, total_size - tail_len, total_size - 1, timeout=timeout
-            )
+                if total_size == 0:
+                    return None, "Unable to determine remote file size"
 
-            files = RemoteZipInspector._parse_cd(tail_data, total_size, final_url)
-            return {
-                "total_size_bytes": total_size,
-                "size_mb": total_size / (1024 * 1024),
-                "files": files,
-                "source_url": final_url,
-                "local_path": None,
-            }, None
-        except Exception as e:
-            return None, str(e)
+                tail_len = min(total_size, 512 * 1024)
+                tail_data, _ = RemoteZipInspector.fetch_range(
+                    final_url, total_size - tail_len, total_size - 1, timeout=timeout
+                )
+
+                files = RemoteZipInspector._parse_cd(tail_data, total_size, final_url)
+                if not files:
+                    raise RuntimeError("Parsed 0 entries from remote ZIP central directory")
+
+                return {
+                    "total_size_bytes": total_size,
+                    "size_mb": total_size / (1024 * 1024),
+                    "files": files,
+                    "source_url": final_url,
+                    "local_path": None,
+                }, None
+            except Exception as e:
+                last_err = e
+                if attempt < 3:
+                    time.sleep(1.5 * (attempt + 1))
+        return None, str(last_err)
 
     @staticmethod
     def inspect_local(path: str):

@@ -161,47 +161,64 @@ def compare_two_packages(
     }
 
 
-def _discover_remote_packages():
+def _discover_remote_packages(skip_pure_remote: bool = False):
+    from core.constants import MTG_FALLBACK_URLS
+
     pure_packages = {}
-    try:
-        pure_releases = fetch_releases_json(PURE_API)
-        for rel in pure_releases:
-            for asset in rel.get("assets", []):
-                name = asset.get("name", "")
-                if name.startswith("GoogleGapps-") and name.endswith(".zip"):
-                    ver, arch = parse_package_version_and_arch(name)
-                    if ver and arch:
-                        pure_packages[(ver, arch)] = {
-                            "name": name,
-                            "url": asset.get("browser_download_url", ""),
-                            "size_bytes": asset.get("size", 0),
-                            "release_tag": rel.get("tag_name", ""),
-                            "local_path": None,
-                        }
-    except Exception as e:
-        print(f"[!] Note: Could not fetch remote PureGoogleGapps releases ({e})")
+    if not skip_pure_remote:
+        try:
+            pure_releases = fetch_releases_json(PURE_API)
+            for rel in pure_releases:
+                for asset in rel.get("assets", []):
+                    name = asset.get("name", "")
+                    if name.startswith("GoogleGapps-") and name.endswith(".zip"):
+                        ver, arch = parse_package_version_and_arch(name)
+                        if ver and arch:
+                            pure_packages[(ver, arch)] = {
+                                "name": name,
+                                "url": asset.get("browser_download_url", ""),
+                                "size_bytes": asset.get("size", 0),
+                                "release_tag": rel.get("tag_name", ""),
+                                "local_path": None,
+                            }
+        except Exception as e:
+            print(f"[!] Note: Could not fetch remote PureGoogleGapps releases ({e})")
 
     mtg_packages = {}
-    mtg_releases = fetch_releases_json(MTG_API)
-    for rel in mtg_releases:
-        tag = rel.get("tag_name", "")
-        for asset in rel.get("assets", []):
-            name = asset.get("name", "")
-            if (
-                name.startswith("MindTheGapps-")
-                and name.endswith(".zip")
-                and not name.endswith(".sum")
-            ):
-                ver, arch = parse_package_version_and_arch(name)
-                if ver and arch:
-                    key = (ver, arch)
-                    if key not in mtg_packages:
-                        mtg_packages[key] = {
-                            "name": name,
-                            "url": asset.get("browser_download_url", ""),
-                            "size_bytes": asset.get("size", 0),
-                            "release_tag": tag,
-                        }
+    try:
+        mtg_releases = fetch_releases_json(MTG_API)
+        for rel in mtg_releases:
+            tag = rel.get("tag_name", "")
+            for asset in rel.get("assets", []):
+                name = asset.get("name", "")
+                if (
+                    name.startswith("MindTheGapps-")
+                    and name.endswith(".zip")
+                    and not name.endswith(".sum")
+                ):
+                    ver, arch = parse_package_version_and_arch(name)
+                    if ver and arch:
+                        key = (ver, arch)
+                        if key not in mtg_packages:
+                            mtg_packages[key] = {
+                                "name": name,
+                                "url": asset.get("browser_download_url", ""),
+                                "size_bytes": asset.get("size", 0),
+                                "release_tag": tag,
+                            }
+    except Exception as e:
+        print(f"[*] Note: GitHub API MTG query skipped ({e}); using canonical release URL table...")
+
+    for (ver, arch), url in MTG_FALLBACK_URLS.items():
+        if (ver, arch) not in mtg_packages:
+            fname = os.path.basename(url)
+            tag = url.split("/")[-2] if "/" in url else "release"
+            mtg_packages[(ver, arch)] = {
+                "name": fname,
+                "url": url,
+                "size_bytes": 0,
+                "release_tag": tag,
+            }
 
     return pure_packages, mtg_packages
 

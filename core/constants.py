@@ -15,6 +15,35 @@ SDK_MAP = {
     "16.0.0": 36,
 }
 
+# Canonical direct download URLs for MindTheGapps releases (bypasses api.github.com rate limits)
+MTG_FALLBACK_URLS = {
+    ("9.0.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-9.0.0-arm-20230323.zip",
+    ("9.0.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-9.0.0-arm64-20230323.zip",
+    ("9.0.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-9.0.0-x86-20230323.zip",
+    ("10.0.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-10.0.0-arm-20230323.zip",
+    ("10.0.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-10.0.0-arm64-20230323.zip",
+    ("10.0.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-10.0.0-x86-20230323.zip",
+    ("11.0.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-11.0.0-arm-20230323.zip",
+    ("11.0.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-11.0.0-arm64-20230323.zip",
+    ("11.0.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20230323/MindTheGapps-11.0.0-x86-20230323.zip",
+    ("12.1.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-12.1.0-arm-20240619.zip",
+    ("12.1.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-12.1.0-arm64-20240619.zip",
+    ("12.1.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-12.1.0-x86-20240619.zip",
+    ("12.1.0", "x86_64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-12.1.0-x86_64-20240619.zip",
+    ("13.0.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-13.0.0-arm-20240619.zip",
+    ("13.0.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-13.0.0-arm64-20240619.zip",
+    ("13.0.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-13.0.0-x86-20240619.zip",
+    ("13.0.0", "x86_64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20240619/MindTheGapps-13.0.0-x86_64-20240619.zip",
+    ("14.0.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20250330/MindTheGapps-14.0.0-arm-20250330.zip",
+    ("14.0.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20250330/MindTheGapps-14.0.0-arm64-20250330.zip",
+    ("14.0.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20241225/MindTheGapps-14.0.0-x86-20241225.zip",
+    ("14.0.0", "x86_64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20250330/MindTheGapps-14.0.0-x86_64-20250330.zip",
+    ("15.0.0", "arm"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20250330/MindTheGapps-15.0.0-arm-20250330.zip",
+    ("15.0.0", "arm64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20250330/MindTheGapps-15.0.0-arm64-20250330.zip",
+    ("15.0.0", "x86"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20241225/MindTheGapps-15.0.0-x86-20241225.zip",
+    ("15.0.0", "x86_64"): "https://github.com/s1204IT/MindTheGappsBuilder/releases/download/20250330/MindTheGapps-15.0.0-x86_64-20250330.zip",
+}
+
 # Maps target APK filenames (lowercase) to their official AndroidManifest package name
 # Used during packaging fallback to locate APKs inside Google SDK images even if renamed
 APK_PACKAGE_MAP = {

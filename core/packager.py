@@ -11,6 +11,7 @@ import zipfile
 import tempfile
 from .constants import (
     SDK_MAP,
+    MTG_FALLBACK_URLS,
     APK_PACKAGE_MAP,
     ARCH_TO_TOYBOX,
     ADDOND_HEAD,
@@ -709,14 +710,23 @@ def fetch_missing_apks_via_github_range(
             if zip_url:
                 break
     except Exception as e:
-        print(f"    [!] Warning: Could not query release index for range fallback ({e})")
-        return
+        print(f"    [*] Note: GitHub API release query skipped ({e}); using canonical release URL table...")
+
+    if not zip_url:
+        for target_ver in search_versions:
+            for target_arch in search_archs:
+                if (target_ver, target_arch) in MTG_FALLBACK_URLS:
+                    zip_url = MTG_FALLBACK_URLS[(target_ver, target_arch)]
+                    break
+            if zip_url:
+                break
 
     if not zip_url:
         return
 
     remote_info, err = RemoteZipInspector.inspect(zip_url)
     if not remote_info or err:
+        print(f"    [!] Warning: Could not inspect remote archive {zip_url}: {err}")
         return
 
     remote_files = remote_info.get("files", {})
