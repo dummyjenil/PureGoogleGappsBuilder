@@ -25,7 +25,8 @@ API_VERSION_MAP = {
     32: "12.1.0",
     33: "13.0.0",
     34: "14.0.0",
-    35: "15.0.0"
+    35: "15.0.0",
+    36: "16.0.0",
 }
 
 ARCH_MAP = {
@@ -34,6 +35,16 @@ ARCH_MAP = {
     "arm64-v8a": "arm64",
     "armeabi-v7a": "arm"
 }
+
+
+def _parse_rev_tuple(rev_str: str) -> tuple:
+    parts = []
+    for p in (rev_str or "").split("."):
+        try:
+            parts.append(int(p))
+        except ValueError:
+            parts.append(0)
+    return tuple(parts) if parts else (0,)
 
 
 def fetch_google_repository_metadata():
@@ -53,6 +64,10 @@ def fetch_google_repository_metadata():
                         continue
                         
                     path = pkg.attrib.get("path", "")
+                    # Skip 16KB page-size experimental images (ps16k)
+                    if "ps16k" in path.lower():
+                        continue
+
                     api_level = None
                     abi = None
                     
@@ -87,10 +102,12 @@ def fetch_google_repository_metadata():
                     checksum_elem = archive.find(".//{*}checksum")
                     rev_elem = pkg.find(".//{*}revision")
                     
-                    if url_elem is None:
+                    if url_elem is None or not url_elem.text:
                         continue
                         
                     file_url = url_elem.text.strip()
+                    if "ps16k" in file_url.lower():
+                        continue
                     if not file_url.startswith("http"):
                         base_prefix = url.rsplit("/", 1)[0]
                         file_url = f"{base_prefix}/{file_url}"
@@ -104,11 +121,20 @@ def fetch_google_repository_metadata():
                     
                     key = f"{API_VERSION_MAP[api_level]}-{arch_name}"
                     
-                    # Prioritize Play Store images over generic google_apis
-                    is_playstore = "playstore" in path or "playstore" in file_url
+                    # Prioritize Play Store images over generic google_apis, and higher revisions within same tier
+                    is_playstore = "playstore" in path.lower() or "playstore" in file_url.lower()
                     existing = latest_images.get(key)
                     
-                    if existing is None or (is_playstore and not existing.get("is_playstore", False)):
+                    should_replace = False
+                    if existing is None:
+                        should_replace = True
+                    elif is_playstore and not existing.get("is_playstore", False):
+                        should_replace = True
+                    elif is_playstore == existing.get("is_playstore", False):
+                        if _parse_rev_tuple(revision_str) > _parse_rev_tuple(existing.get("revision", "")):
+                            should_replace = True
+
+                    if should_replace:
                         latest_images[key] = {
                             "android_version": API_VERSION_MAP[api_level],
                             "api_level": api_level,

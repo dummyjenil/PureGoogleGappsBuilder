@@ -325,7 +325,7 @@ def main():
     parser.add_argument("--local-zip", help="Path to a single built GoogleGapps-*.zip file (Matrix Mode)")
     parser.add_argument("--save-fragment", help="Save per-matrix JSON analysis fragment to path")
     parser.add_argument("--merge-fragments", help="Merge all per-matrix JSON fragments from directory")
-    parser.add_argument("--strict-gate", action="store_true", help="Fail with exit code 1 if tree or XML parity is not 100%")
+    parser.add_argument("--strict-gate", action="store_true", help="Fail with exit code 1 if tree or XML parity is not 100%%")
     args = parser.parse_args()
 
     run_comparison(

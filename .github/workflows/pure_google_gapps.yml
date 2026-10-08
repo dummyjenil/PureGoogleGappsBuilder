@@ -106,7 +106,7 @@ jobs:
           python3 -m py_compile *.py core/*.py analyzer/*.py patch/*.py
           python3 -m patch
 
-      - name: Install High-Speed Extraction Utilities (aria2, 7z, erofs, simg2img)
+      - name: Install High-Speed Extraction & Android SDK Utilities (aria2, 7z, erofs, aapt2, zipalign, SDK ${{ matrix.api }})
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends \
@@ -117,8 +117,20 @@ jobs:
             erofs-utils \
             e2fsprogs \
             aapt \
+            aapt2 \
+            zipalign \
             apksigner \
             android-sdk-platform-23
+
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          TARGET_API="${{ matrix.api }}"
+          if [ -n "$TARGET_API" ] && [ ! -f "$SDK_ROOT/platforms/android-$TARGET_API/android.jar" ]; then
+            SDKMGR=$(find "$SDK_ROOT/cmdline-tools" -name sdkmanager -type f 2>/dev/null | sort -r | head -n 1 || which sdkmanager 2>/dev/null || true)
+            if [ -n "$SDKMGR" ]; then
+              echo "[*] Installing official Android SDK Platform android-$TARGET_API via sdkmanager..."
+              yes | "$SDKMGR" --sdk_root="$SDK_ROOT" "platforms;android-$TARGET_API" >/dev/null 2>&1 || true
+            fi
+          fi
 
       - name: Extract & Package Pure Google GApps
         run: |

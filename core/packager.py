@@ -77,12 +77,76 @@ def load_target_file_list_for_version(android_version: str, arch: str) -> dict:
     return file_mappings
 
 
-def find_android_jar(sdk_version: int):
+def _find_framework_res_in_extracted(extracted_dir: str):
+    """Locates framework-res.apk inside the unpacked Google system image for the exact target Android version."""
+    if not extracted_dir or not os.path.isdir(extracted_dir):
+        return None
+    common_rel_paths = [
+        "system/framework/framework-res.apk",
+        "system/system/framework/framework-res.apk",
+        "framework/framework-res.apk",
+    ]
+    for rel in common_rel_paths:
+        cand = os.path.join(extracted_dir, rel)
+        if os.path.isfile(cand):
+            return cand
+    for root, _, files in os.walk(extracted_dir):
+        if "framework-res.apk" in files:
+            return os.path.join(root, "framework-res.apk")
+    return None
+
+
+def find_android_jar(sdk_version: int, extracted_dir: str = None, allow_extracted_framework: bool = True):
     """
-    Locates an aapt-v1-compatible android.jar (SDK <= 34) fast by inspecting SDK
-    platforms directories without recursive globbing.
+    Locates the exact target Android framework resource package:
+      1. Exact version `framework-res.apk` from `extracted_dir` (if `allow_extracted_framework` is True)
+      2. Exact `platforms/android-{sdk_version}/android.jar` across all SDK roots
+      3. Closest installed `platforms/android-*/android.jar` across all SDK roots
     """
-    target_sdk = min(sdk_version, 34)
+    if allow_extracted_framework and extracted_dir:
+        fw_res = _find_framework_res_in_extracted(extracted_dir)
+        if fw_res:
+            return fw_res
+
+    sdk_roots = [
+        os.environ.get("ANDROID_HOME"),
+        os.environ.get("ANDROID_SDK_ROOT"),
+        "/usr/local/lib/android/sdk",
+        "/usr/lib/android-sdk",
+        os.path.expanduser("~/Android/Sdk"),
+    ]
+    # Pass 1: Look for exact android-{sdk_version}/android.jar across all roots
+    for root in sdk_roots:
+        if not root:
+            continue
+        exact = os.path.join(root, "platforms", f"android-{sdk_version}", "android.jar")
+        if os.path.isfile(exact):
+            return exact
+
+    # Pass 2: Collect all available android.jar candidates across all roots
+    all_candidates = []
+    for root in sdk_roots:
+        if not root:
+            continue
+        plat_dir = os.path.join(root, "platforms")
+        if os.path.isdir(plat_dir):
+            for entry in os.listdir(plat_dir):
+                if entry.startswith("android-"):
+                    try:
+                        ver = int(entry.split("-")[1])
+                        cand = os.path.join(plat_dir, entry, "android.jar")
+                        if os.path.isfile(cand):
+                            all_candidates.append((abs(ver - sdk_version), -ver, cand))
+                    except ValueError:
+                        pass
+    if all_candidates:
+        all_candidates.sort()
+        return all_candidates[0][2]
+    return None
+
+
+def _find_sdk_build_tool(tool_name: str):
+    """Finds a tool (aapt2, aapt, zipalign) prioritizing Android SDK build-tools over system PATH."""
     sdk_roots = [
         os.environ.get("ANDROID_HOME"),
         os.environ.get("ANDROID_SDK_ROOT"),
@@ -93,50 +157,82 @@ def find_android_jar(sdk_version: int):
     for root in sdk_roots:
         if not root:
             continue
-        exact = os.path.join(root, "platforms", f"android-{target_sdk}", "android.jar")
-        if os.path.isfile(exact):
-            return exact
-        plat_dir = os.path.join(root, "platforms")
-        if os.path.isdir(plat_dir):
-            candidates = []
-            for entry in os.listdir(plat_dir):
-                if entry.startswith("android-"):
-                    try:
-                        ver = int(entry.split("-")[1])
-                        if ver <= 34:
-                            candidates.append((ver, entry))
-                    except ValueError:
-                        pass
-            for _, entry in sorted(candidates, reverse=True):
-                cand = os.path.join(plat_dir, entry, "android.jar")
-                if os.path.isfile(cand):
+        btd = os.path.join(root, "build-tools")
+        if os.path.isdir(btd):
+            for ver in sorted(os.listdir(btd), reverse=True):
+                cand = os.path.join(btd, ver, tool_name)
+                if os.path.isfile(cand) and os.access(cand, os.X_OK):
                     return cand
-    return None
+    return shutil.which(tool_name)
 
 
 def find_aapt_binary():
-    """Finds aapt binary from PATH or Android build-tools"""
-    w = shutil.which("aapt")
-    if w:
-        return w
-    android_home = (
-        os.environ.get("ANDROID_HOME")
-        or os.environ.get("ANDROID_SDK_ROOT")
-        or "/usr/local/lib/android/sdk"
-    )
-    btd = os.path.join(android_home, "build-tools")
-    if os.path.isdir(btd):
-        for ver in sorted(os.listdir(btd), reverse=True):
-            cand = os.path.join(btd, ver, "aapt")
-            if os.path.isfile(cand) and os.access(cand, os.X_OK):
-                return cand
-    return None
+    """Finds aapt binary from Android build-tools or PATH."""
+    return _find_sdk_build_tool("aapt")
 
 
-def compile_local_overlays(android_version: str, sdk_version: int, target_overlay_dir: str):
+def find_aapt2_binary():
+    """Finds aapt2 binary from Android build-tools or PATH."""
+    return _find_sdk_build_tool("aapt2")
+
+
+def find_zipalign_binary():
+    """Finds zipalign binary from Android build-tools or PATH."""
+    return _find_sdk_build_tool("zipalign")
+
+
+def _align_apk_4byte(src_apk: str, dst_apk: str):
+    """
+    Aligns uncompressed ZIP entries (such as resources.arsc) to a 4-byte boundary
+    using `zipalign -f -p 4`, with a pure-Python fallback if `zipalign` is unavailable.
+    """
+    zipalign_bin = find_zipalign_binary()
+    if zipalign_bin:
+        try:
+            subprocess.run(
+                [zipalign_bin, "-f", "-p", "4", src_apk, dst_apk],
+                check=True,
+                capture_output=True,
+                timeout=15,
+            )
+            return
+        except Exception:
+            pass
+
+    # Pure-Python 4-byte alignment fallback for uncompressed entries (e.g., resources.arsc)
+    import struct
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".apk") as tmpf:
+        tmp_path = tmpf.name
+    try:
+        with zipfile.ZipFile(src_apk, "r") as zin, zipfile.ZipFile(tmp_path, "w") as zout:
+            for item in zin.infolist():
+                data = zin.read(item.filename)
+                zinfo = zipfile.ZipInfo(item.filename, date_time=item.date_time)
+                zinfo.compress_type = item.compress_type
+                zinfo.external_attr = item.external_attr
+                zinfo.extra = b""
+                if zinfo.compress_type == zipfile.ZIP_STORED:
+                    header_end = zout.fp.tell() + 30 + len(zinfo.filename.encode("utf-8"))
+                    pad = (4 - (header_end % 4)) % 4
+                    if pad:
+                        zinfo.extra = b"\x00" * pad
+                zout.writestr(zinfo, data)
+        shutil.move(tmp_path, dst_apk)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+def compile_local_overlays(
+    android_version: str,
+    sdk_version: int,
+    target_overlay_dir: str,
+    extracted_dir: str = None,
+):
     """
     Compiles Runtime Resource Overlays (RROs) for Android 12+ from `static/<version>/overlay/`
-    using aapt (-0 arsc) and signs them with local AOSP testkeys.
+    using aapt2 (with fallback to aapt), aligns uncompressed `resources.arsc` on a 4-byte boundary
+     via `zipalign`, and signs with local AOSP testkeys (`CERT`).
     """
     if sdk_version < 31:
         return
@@ -154,17 +250,23 @@ def compile_local_overlays(android_version: str, sdk_version: int, target_overla
         if os.path.isdir(os.path.join(src_overlay_root, d))
     ])
 
-    android_jar = find_android_jar(sdk_version)
+    primary_jar = find_android_jar(sdk_version, extracted_dir=extracted_dir, allow_extracted_framework=True)
+    fallback_jar = find_android_jar(min(sdk_version, 34), extracted_dir=None, allow_extracted_framework=False)
+    aapt2_bin = find_aapt2_binary()
     aapt_bin = find_aapt_binary()
-    apksigner_bin = shutil.which("apksigner")
+    apksigner_bin = shutil.which("apksigner") or _find_sdk_build_tool("apksigner")
 
-    if not aapt_bin or not android_jar:
-        print(f"    [!] Warning: aapt ({aapt_bin}) or android.jar ({android_jar}) not found. Skipping overlay compilation.")
+    if not (aapt2_bin or aapt_bin) or not (primary_jar or fallback_jar):
+        print(
+            f"    [!] Warning: aapt2/aapt ({aapt2_bin or aapt_bin}) or framework jar ({primary_jar}) not found. Skipping overlay compilation."
+        )
         return
 
     pk8_file = os.path.join(RES_ROOT, "sign", "testkey.pk8")
     pem_file = os.path.join(RES_ROOT, "sign", "testkey.x509.pem")
     can_sign = bool(apksigner_bin and os.path.isfile(pk8_file) and os.path.isfile(pem_file))
+
+    jar_candidates = [j for j in [primary_jar, fallback_jar] if j]
 
     for overlay_name in overlays_to_build:
         out_apk = os.path.join(target_overlay_dir, f"{overlay_name}.apk")
@@ -178,24 +280,78 @@ def compile_local_overlays(android_version: str, sdk_version: int, target_overla
             continue
 
         try:
-            cmd = [
-                aapt_bin, "package", "-f",
-                "-M", manifest_file,
-                "-S", res_dir,
-                "-I", android_jar,
-                "-0", "arsc",
-                "-F", out_apk,
-            ]
-            subprocess.run(cmd, check=True, capture_output=True, timeout=15)
+            with tempfile.TemporaryDirectory() as tmp_ov:
+                raw_apk = os.path.join(tmp_ov, f"{overlay_name}_raw.apk")
+                compiled_ok = False
+
+                if aapt2_bin:
+                    flata_file = os.path.join(tmp_ov, "res.flata")
+                    subprocess.run(
+                        [aapt2_bin, "compile", "--dir", res_dir, "-o", flata_file],
+                        check=True,
+                        capture_output=True,
+                        timeout=15,
+                    )
+                    for jar_path in jar_candidates:
+                        try:
+                            link_cmd = [
+                                aapt2_bin, "link",
+                                "-o", raw_apk,
+                                "-I", jar_path,
+                                "--manifest", manifest_file,
+                                "--min-sdk-version", str(sdk_version),
+                                "--target-sdk-version", str(sdk_version),
+                                "--no-auto-version",
+                                flata_file,
+                            ]
+                            subprocess.run(link_cmd, check=True, capture_output=True, timeout=15)
+                            compiled_ok = True
+                            break
+                        except Exception:
+                            continue
+
+                if not compiled_ok and aapt_bin:
+                    for jar_path in jar_candidates:
+                        try:
+                            cmd = [
+                                aapt_bin, "package", "-f",
+                                "-M", manifest_file,
+                                "-S", res_dir,
+                                "-I", jar_path,
+                                "--min-sdk-version", str(sdk_version),
+                                "--target-sdk-version", str(sdk_version),
+                                "-0", "arsc",
+                                "-F", raw_apk,
+                            ]
+                            subprocess.run(cmd, check=True, capture_output=True, timeout=15)
+                            compiled_ok = True
+                            break
+                        except Exception:
+                            continue
+
+                if not compiled_ok or not os.path.isfile(raw_apk):
+                    raise RuntimeError("Neither aapt2 nor aapt succeeded in linking overlay")
+
+                # Align uncompressed resources.arsc on 4-byte boundary (required for Android 11+ / SDK 30+)
+                _align_apk_4byte(raw_apk, out_apk)
+
             if can_sign:
                 subprocess.run(
-                    [apksigner_bin, "sign", "--key", pk8_file, "--cert", pem_file, out_apk],
-                    check=True, capture_output=True, timeout=15,
+                    [
+                        apksigner_bin, "sign",
+                        "--v1-signer-name", "CERT",
+                        "--key", pk8_file,
+                        "--cert", pem_file,
+                        out_apk,
+                    ],
+                    check=True,
+                    capture_output=True,
+                    timeout=15,
                 )
                 idsig = f"{out_apk}.idsig"
                 if os.path.exists(idsig):
                     os.remove(idsig)
-            print(f"    [✓] Compiled & Signed Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
+            print(f"    [✓] Compiled, 4-Byte Aligned & Signed Overlay: {overlay_name}.apk ({os.path.getsize(out_apk)} bytes)")
         except Exception as e:
             print(f"    [!] Warning: Failed to build overlay {overlay_name}: {e}")
 
@@ -226,55 +382,151 @@ def copy_local_static_proprietary_files(android_version: str, arch: str, system_
                 print(f"    [+] Static Proprietary ({prefix}): {sub_rel} ({os.path.getsize(dst_path)} bytes)")
 
 
-def _extract_privileged_perms_from_apk(aapt_bin: str, apk_or_jar_path: str) -> set:
-    """Extracts any <permission> defined with PROTECTION_FLAG_PRIVILEGED (0x10) from AndroidManifest.xml"""
-    found = set()
+def _parse_axml_manifest_permissions(apk_or_jar_path: str) -> tuple:
+    """
+    Pure-Python binary AndroidManifest.xml (AXML) permission extractor.
+    Works across all Android SDK levels (28 through 36+) without spawning `aapt` subprocesses
+    or failing on SDK 35/36 compact `resources.arsc` tables.
+    Returns `(package_name, defined_privileged_perms_set, requested_perms_list)`.
+    """
+    import struct
+    defined_priv = set()
+    requested = []
+    pkg_name = ""
     if not apk_or_jar_path or not os.path.isfile(apk_or_jar_path):
-        return found
+        return pkg_name, defined_priv, requested
     try:
-        out = subprocess.check_output(
-            [aapt_bin, "dump", "xmltree", apk_or_jar_path, "AndroidManifest.xml"],
-            text=True,
-            stderr=subprocess.DEVNULL,
-            timeout=15,
-        )
-        cur_perm = None
-        for line in out.splitlines():
-            s = line.strip()
-            if s.startswith("E: permission "):
-                cur_perm = None
-            elif cur_perm is None and "A: android:name(" in s and '"' in s:
-                cur_perm = s.split('"')[1]
-            elif cur_perm and "A: android:protectionLevel(" in s and ")0x" in s:
-                val = int(s.split(")0x")[1], 16)
-                if val & 0x10:
-                    found.add(cur_perm)
-                cur_perm = None
+        with zipfile.ZipFile(apk_or_jar_path, "r") as zf:
+            axml = zf.read("AndroidManifest.xml")
+        if len(axml) < 36 or struct.unpack("<H", axml[:2])[0] != 0x0003:
+            return pkg_name, defined_priv, requested
+        (
+            sp_type,
+            sp_hdr_size,
+            sp_size,
+            str_count,
+            style_count,
+            flags,
+            str_start,
+            style_start,
+        ) = struct.unpack("<HHIIIIII", axml[8:36])
+        is_utf8 = (flags & (1 << 8)) != 0
+        offsets = [
+            struct.unpack("<I", axml[36 + i * 4 : 40 + i * 4])[0]
+            for i in range(str_count)
+        ]
+        strings = []
+        pool_base = 8 + str_start
+        for off in offsets:
+            pos = pool_base + off
+            if is_utf8:
+                pos += 2 if (axml[pos] & 0x80) else 1
+                blen = axml[pos]
+                if blen & 0x80:
+                    blen = ((blen & 0x7F) << 8) | axml[pos + 1]
+                    pos += 2
+                else:
+                    pos += 1
+                strings.append(axml[pos : pos + blen].decode("utf-8", errors="ignore"))
+            else:
+                clen = struct.unpack("<H", axml[pos : pos + 2])[0]
+                if clen & 0x8000:
+                    clen = ((clen & 0x7FFF) << 16) | struct.unpack("<H", axml[pos + 2 : pos + 4])[0]
+                    pos += 4
+                else:
+                    pos += 2
+                strings.append(axml[pos : pos + clen * 2].decode("utf-16le", errors="ignore"))
+
+        ptr = 8 + sp_size
+        res_ids = []
+        while ptr + 8 <= len(axml):
+            ctype, chdr, csize = struct.unpack("<HHI", axml[ptr : ptr + 8])
+            if ctype == 0x0180:
+                res_ids = [
+                    struct.unpack("<I", axml[ptr + chdr + i * 4 : ptr + chdr + (i + 1) * 4])[0]
+                    for i in range((csize - chdr) // 4)
+                ]
+            elif ctype == 0x0102:
+                name_idx = struct.unpack("<i", axml[ptr + 20 : ptr + 24])[0]
+                elem = strings[name_idx] if 0 <= name_idx < len(strings) else ""
+                attr_start, attr_size, attr_count = struct.unpack("<HHH", axml[ptr + 24 : ptr + 30])
+                abase = ptr + 16 + attr_start
+                if elem == "manifest":
+                    for i in range(attr_count):
+                        aoff = abase + i * attr_size
+                        if aoff + 20 > len(axml):
+                            break
+                        ns_i, nm_i, raw_v, t_size, _, dtype, dval = struct.unpack("<iiiHBBI", axml[aoff : aoff + 20])
+                        if (strings[nm_i] if 0 <= nm_i < len(strings) else "") == "package":
+                            pkg_name = (
+                                strings[raw_v]
+                                if 0 <= raw_v < len(strings)
+                                else (strings[dval] if dtype == 3 and 0 <= dval < len(strings) else "")
+                            )
+                elif elem == "permission":
+                    p_name = ""
+                    prot = 0
+                    for i in range(attr_count):
+                        aoff = abase + i * attr_size
+                        if aoff + 20 > len(axml):
+                            break
+                        ns_i, nm_i, raw_v, t_size, _, dtype, dval = struct.unpack("<iiiHBBI", axml[aoff : aoff + 20])
+                        aname = strings[nm_i] if 0 <= nm_i < len(strings) else ""
+                        rid = res_ids[nm_i] if 0 <= nm_i < len(res_ids) else 0
+                        if rid == 0x01010003 or aname == "name":
+                            p_name = (
+                                strings[dval]
+                                if dtype == 3 and 0 <= dval < len(strings)
+                                else (strings[raw_v] if 0 <= raw_v < len(strings) else "")
+                            )
+                        elif rid == 0x01010009 or aname == "protectionLevel":
+                            prot = dval
+                    if p_name and (prot & 0x10):
+                        defined_priv.add(p_name)
+                elif elem in ("uses-permission", "uses-permission-sdk-23"):
+                    for i in range(attr_count):
+                        aoff = abase + i * attr_size
+                        if aoff + 20 > len(axml):
+                            break
+                        ns_i, nm_i, raw_v, t_size, _, dtype, dval = struct.unpack("<iiiHBBI", axml[aoff : aoff + 20])
+                        aname = strings[nm_i] if 0 <= nm_i < len(strings) else ""
+                        rid = res_ids[nm_i] if 0 <= nm_i < len(res_ids) else 0
+                        if rid == 0x01010003 or aname == "name":
+                            p_name = (
+                                strings[dval]
+                                if dtype == 3 and 0 <= dval < len(strings)
+                                else (strings[raw_v] if 0 <= raw_v < len(strings) else "")
+                            )
+                            if p_name and p_name not in requested:
+                                requested.append(p_name)
+            ptr += max(csize, 8)
     except Exception:
         pass
-    return found
+    return pkg_name, defined_priv, requested
 
 
-def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
+def _extract_privileged_perms_from_apk(aapt_bin: str, apk_or_jar_path: str) -> set:
+    """Extracts any <permission> defined with PROTECTION_FLAG_PRIVILEGED (0x10) from AndroidManifest.xml."""
+    _, defined_priv, _ = _parse_axml_manifest_permissions(apk_or_jar_path)
+    return defined_priv
+
+
+def sync_privapp_permissions(system_dir: str, sdk_version: int = 34, extracted_dir: str = None):
     """
     Scans every APK placed in priv-app/ across partitions (product, system_ext, system)
-    using aapt and guarantees all requested signature|privileged permissions are whitelisted
+    and guarantees all requested signature|privileged permissions that actually exist in the
+    target Android version's framework (`framework-res.apk` / `android.jar`) are whitelisted
     in that partition's etc/permissions/privapp-permissions-google*.xml.
     """
     import xml.etree.ElementTree as ET
-    aapt_bin = find_aapt_binary()
-    if not aapt_bin:
-        return
 
-    privileged_allowlist = set(KNOWN_PRIVILEGED_PERMISSIONS)
-    android_jar = find_android_jar(sdk_version)
-    if android_jar:
-        privileged_allowlist |= _extract_privileged_perms_from_apk(aapt_bin, android_jar)
+    privileged_allowlist = set()
+    fw_source = find_android_jar(sdk_version, extracted_dir=extracted_dir, allow_extracted_framework=True)
+    if fw_source:
+        privileged_allowlist |= _extract_privileged_perms_from_apk(None, fw_source)
 
-    for r, _, files in os.walk(system_dir):
-        for f in files:
-            if f.endswith(".apk"):
-                privileged_allowlist |= _extract_privileged_perms_from_apk(aapt_bin, os.path.join(r, f))
+    if not privileged_allowlist:
+        privileged_allowlist = set(KNOWN_PRIVILEGED_PERMISSIONS)
 
     partitions = [
         ("product", os.path.join(system_dir, "product"), "privapp-permissions-google-product.xml"),
@@ -332,17 +584,10 @@ def sync_privapp_permissions(system_dir: str, sdk_version: int = 34):
                     continue
                 apk_path = os.path.join(r, f)
                 try:
-                    out = subprocess.check_output([aapt_bin, "dump", "permissions", apk_path], text=True, timeout=15)
-                    lines = out.splitlines()
-                    if not lines:
+                    pkg, _, req_all = _parse_axml_manifest_permissions(apk_path)
+                    if not pkg:
                         continue
-                    pkg = lines[0].split(": ")[1].strip()
-                    req = []
-                    for l in lines[1:]:
-                        if "uses-permission:" in l and "name='" in l:
-                            perm = l.split("name='")[1].split("'")[0]
-                            if perm in privileged_allowlist and perm not in req:
-                                req.append(perm)
+                    req = [perm for perm in req_all if perm in privileged_allowlist]
                     if pkg in pkg_nodes:
                         xfile, node = pkg_nodes[pkg]
                     else:
@@ -547,6 +792,9 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
     included_files = []
     missing_targets = []
 
+    # Same-package APK filename aliases across Google SDK image releases
+    # (Excludes cross-package consumer apps like CalendarGooglePrebuilt/GoogleContacts/PrebuiltGmail
+    # so standalone sync adapters are fetched cleanly via fetch_missing_apks_via_github_range)
     ALIASES = {
         "gmscore.apk": ["prebuiltgmscore.apk", "gmscore.apk"],
         "prebuiltgmscore.apk": ["gmscore.apk", "prebuiltgmscore.apk"],
@@ -565,15 +813,9 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
         "markupgoogle_v2.apk": ["markupgoogle_v2.apk", "markupgoogle.apk"],
         "markupgoogle.apk": ["markupgoogle.apk", "markupgoogle_v2.apk"],
         "velvettitan.apk": ["velvettitan.apk", "velvet.apk"],
-        "googlecalendarsyncadapter.apk": ["googlecalendarsyncadapter.apk", "calendargoogleprebuilt.apk"],
-        "googlecontactssyncadapter.apk": ["googlecontactssyncadapter.apk", "googlecontacts.apk"],
-        "prebuiltexchange3google.apk": ["prebuiltexchange3google.apk", "exchange3google.apk", "prebuiltgmail.apk"],
-    }
-
-    PACKAGE_FALLBACK_EQUIVALENTS = {
-        "com.google.android.syncadapters.calendar": ["com.google.android.syncadapters.calendar", "com.google.android.calendar"],
-        "com.google.android.syncadapters.contacts": ["com.google.android.syncadapters.contacts", "com.google.android.contacts"],
-        "com.google.android.gm.exchange": ["com.google.android.gm.exchange", "com.google.android.gm"],
+        "googlecalendarsyncadapter.apk": ["googlecalendarsyncadapter.apk"],
+        "googlecontactssyncadapter.apk": ["googlecontactssyncadapter.apk"],
+        "prebuiltexchange3google.apk": ["prebuiltexchange3google.apk", "exchange3google.apk"],
     }
 
     # 2. Match and copy files according to target mappings
@@ -596,15 +838,12 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
                         match_method = f"alias:{alias_name}"
                         break
 
-            # Package-Name Fallback Lookup inside Google SDK Image
+            # Exact Package-Name Fallback Lookup inside Google SDK Image
             if not candidates and base_fname.endswith(".apk"):
                 expected_pkg = APK_PACKAGE_MAP.get(base_fname)
-                if expected_pkg:
-                    for cand_pkg in PACKAGE_FALLBACK_EQUIVALENTS.get(expected_pkg, [expected_pkg]):
-                        if cand_pkg in extracted_pkg_map:
-                            candidates = extracted_pkg_map[cand_pkg]
-                            match_method = f"package-fallback:{cand_pkg}"
-                            break
+                if expected_pkg and expected_pkg in extracted_pkg_map:
+                    candidates = extracted_pkg_map[expected_pkg]
+                    match_method = f"package-fallback:{expected_pkg}"
 
             if candidates:
                 part_hint = dst_rel.split("/")[0].lower() if "/" in dst_rel else ""
@@ -644,12 +883,12 @@ def structure_gapps_hierarchy(extracted_dir: str, target_pkg_dir: str, android_v
             for dst_rel, bname, pkg in unresolved:
                 print(f"        - MISSING: {dst_rel} (filename={bname}, expected_pkg={pkg})")
 
-    # 4. Auto-synchronize privapp-permissions for all extracted APKs to prevent bootloops
-    sync_privapp_permissions(system_dir, sdk_version)
+    # 4. Auto-synchronize privapp-permissions against exact target Android version's framework-res.apk
+    sync_privapp_permissions(system_dir, sdk_version, extracted_dir=extracted_dir)
 
-    # 5. Compile local RRO overlays
+    # 5. Compile local RRO overlays against exact target Android version's framework-res.apk
     overlay_dir = os.path.join(system_dir, "product", "overlay")
-    compile_local_overlays(android_version, sdk_version, overlay_dir)
+    compile_local_overlays(android_version, sdk_version, overlay_dir, extracted_dir=extracted_dir)
 
     # 6. Copy architecture-specific toybox binary from res/toybox/ (for Android 10+ / SDK >= 29)
     if sdk_version >= 29:

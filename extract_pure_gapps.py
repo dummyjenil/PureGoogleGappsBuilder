@@ -84,7 +84,7 @@ def build_pure_gapps(android_version: str, arch: str, abi: str, url: str, out_di
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract 100% Pure GApps from Google Official Images (MindTheGapps Compatible)")
+    parser = argparse.ArgumentParser(description="Extract 100%% Pure GApps from Google Official Images (MindTheGapps Compatible)")
     parser.add_argument("--android", required=True, help="Android Version (e.g. 13.0.0)")
     parser.add_argument("--arch", required=True, help="Architecture (e.g. x86_64, arm64)")
     parser.add_argument("--abi", default="x86_64", help="Target ABI (e.g. x86_64, arm64-v8a)")
