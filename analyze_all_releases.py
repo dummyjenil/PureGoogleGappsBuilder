@@ -49,7 +49,82 @@ def parse_package_version_and_arch(name: str):
     return None, None
 
 
-def compare_two_packages(ver: str, arch: str, pure_info: dict, mtg_info: dict) -> dict:
+def _adapt_baseline_for_version(
+    ver: str, arch: str, mtg_info: dict, base_ver: str = None, base_arch: str = None
+) -> dict:
+    """
+    When no exact prebuilt MindTheGapps release exists for `(ver, arch)` (e.g. Android 16.0.0
+    which uses MindTheGapps 15.0.0 as its remote ZIP baseline), adapts the baseline's file
+    tree and canonical XMLs using `patch/v*.py` (`get_patched_version_dir(ver)` and
+    `load_target_file_list_for_version(ver, arch)`) so the release gate validates against
+    MindTheGapps's official specification for `ver`.
+    """
+    import copy
+    import zlib
+    from core.packager import load_target_file_list_for_version
+    from patch import get_patched_version_dir
+
+    if base_ver == ver and base_arch == arch:
+        return mtg_info
+
+    adapted = copy.deepcopy(mtg_info)
+    adapted_files = adapted["files"]
+
+    target_ver_files = set(
+        "system/" + k for k in load_target_file_list_for_version(ver, arch).keys()
+    )
+    if base_ver and base_arch:
+        target_base_files = set(
+            "system/" + k
+            for k in load_target_file_list_for_version(base_ver, base_arch).keys()
+        )
+        for obsolete_path in target_base_files - target_ver_files:
+            adapted_files.pop(obsolete_path, None)
+
+    ver_dir = get_patched_version_dir(ver)
+    arch_prefix = f"{arch}/proprietary"
+    if not os.path.isdir(os.path.join(ver_dir, arch_prefix)) and arch == "x86_64":
+        arch_prefix = "x86/proprietary"
+
+    for prefix in ["common/proprietary", arch_prefix]:
+        src_root = os.path.join(ver_dir, prefix)
+        if not os.path.isdir(src_root):
+            continue
+        for root, _, files in os.walk(src_root):
+            for fname in sorted(files):
+                if fname.endswith(".apk"):
+                    continue
+                src_full = os.path.join(root, fname)
+                sub_rel = os.path.relpath(src_full, src_root).replace("\\", "/")
+                zip_path = f"system/{sub_rel}"
+                if zip_path in target_ver_files or zip_path in adapted_files:
+                    with open(src_full, "rb") as f:
+                        raw = f.read()
+                    adapted_files[zip_path] = {
+                        "size": len(raw),
+                        "compressed_size": len(raw),
+                        "crc32": f"{zlib.crc32(raw) & 0xFFFFFFFF:08x}",
+                        "method": 0,
+                        "offset": 0,
+                        "url": None,
+                        "local_zip": None,
+                        "local_file": src_full,
+                    }
+
+    return adapted
+
+
+def compare_two_packages(
+    ver: str,
+    arch: str,
+    pure_info: dict,
+    mtg_info: dict,
+    base_ver: str = None,
+    base_arch: str = None,
+) -> dict:
+    if base_ver and (base_ver != ver or base_arch != arch):
+        mtg_info = _adapt_baseline_for_version(ver, arch, mtg_info, base_ver, base_arch)
+
     pure_files = pure_info["files"]
     mtg_files = mtg_info["files"]
 
@@ -297,8 +372,11 @@ def run_comparison(
         m_res = inspected_data.get(m_pkg["url"])
         if not p_res or not m_res:
             continue
+        base_ver, base_arch = parse_package_version_and_arch(m_pkg.get("name", ""))
         print(f"[*] Analyzing XMLs & APK Versions for Android {ver} ({arch})...")
-        comp = compare_two_packages(ver, arch, p_res, m_res)
+        comp = compare_two_packages(
+            ver, arch, p_res, m_res, base_ver=base_ver, base_arch=base_arch
+        )
         merged_map[(ver, arch)] = comp
 
     comparison_results = sorted(merged_map.values(), key=_sort_key)

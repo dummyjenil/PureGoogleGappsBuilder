@@ -173,7 +173,11 @@ class RemoteZipInspector:
 
     @staticmethod
     def read_entry_bytes(entry_meta: dict, rel_path: str) -> bytes:
-        """Reads uncompressed bytes of a single file inside a local or remote ZIP."""
+        """Reads uncompressed bytes of a single file inside a local or remote ZIP, or a local file."""
+        if entry_meta.get("local_file") and os.path.isfile(entry_meta["local_file"]):
+            with open(entry_meta["local_file"], "rb") as f:
+                return f.read()
+
         if entry_meta.get("local_zip") and os.path.isfile(entry_meta["local_zip"]):
             with zipfile.ZipFile(entry_meta["local_zip"], "r") as zf:
                 return zf.read(rel_path)

@@ -39,11 +39,13 @@ def load_target_file_list_for_version(android_version: str, arch: str) -> dict:
     ]
 
     if arch == "x86_64":
-        prop_files.append("proprietary-files-x86.txt")
+        if not os.path.isfile(os.path.join(ver_dir, "proprietary-files-x86_64.txt")):
+            prop_files.append("proprietary-files-x86.txt")
         if not os.path.isfile(os.path.join(ver_dir, "proprietary-files-x86_64-nongrouper.txt")):
             prop_files.append("proprietary-files-x86-nongrouper.txt")
     elif arch in ["arm64", "arm64-v8a"]:
-        prop_files.append("proprietary-files-arm.txt")
+        if not os.path.isfile(os.path.join(ver_dir, f"proprietary-files-{arch}.txt")):
+            prop_files.append("proprietary-files-arm.txt")
         if not os.path.isfile(os.path.join(ver_dir, f"proprietary-files-{arch}-nongrouper.txt")):
             prop_files.append("proprietary-files-arm-nongrouper.txt")
 
@@ -301,6 +303,8 @@ def compile_local_overlays(
                                 "--manifest", manifest_file,
                                 "--min-sdk-version", str(sdk_version),
                                 "--target-sdk-version", str(sdk_version),
+                                "--version-code", "1",
+                                "--version-name", "1.0",
                                 "--no-auto-version",
                                 flata_file,
                             ]
@@ -320,6 +324,8 @@ def compile_local_overlays(
                                 "-I", jar_path,
                                 "--min-sdk-version", str(sdk_version),
                                 "--target-sdk-version", str(sdk_version),
+                                "--version-code", "1",
+                                "--version-name", "1.0",
                                 "-0", "arsc",
                                 "-F", raw_apk,
                             ]
